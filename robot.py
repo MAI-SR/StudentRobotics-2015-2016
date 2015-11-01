@@ -33,9 +33,14 @@ R.wait_start()
 
 #End Constants
 #Variables
-
+robotrotation = 45#current direction the robot is facing
+robotX = 0#current x position of the robot
+robotY = 0#current y position of the robot
+calculatedUS#value the ultasonic sensor is suposed to give clockwhise
+token = null#current token the robot is trying to get or null for when its not searcing for a token
 #End Variables 
 #Methods
+
 #Setter
 def setMotor(motor, speed = 0): #set Motor power
 	if motor == "FL": #front left
@@ -58,8 +63,29 @@ def setServo(servo, value = 0):
 		R.servos[0][3] = value
 #End Setter
 #Getter
-
 #End Getter
+
+def calculateUS(usnumber):#calculates the value the ulrasonic sensor is suposed to give
+	rotation = robotrotation + usnumber*90#magic
+	if rotation == token.rotation:
+		calculatedUS = token
+		return
+	barrier = false
+	dist = 0.00
+	while barrier == false:
+		dist = dist+0.05
+		tmpPoint = calculatePoint(dist,rotation)
+		barrier = inBarrier(tmpPoint[0],tmpPoint[1])
+	calculatedUS = Point(tmpPoint[0],tmpPoint[1],rotation,dist)
+	
+def alculatePoint(dist, rotation):#calculates a point in relation to the robots current position
+	tmpX = robotX + math.cos(rotation)*dist#magic
+	tmpY = robotY + math.sin(rotation)*dist
+	return (tmpX, tmpY)
+
+def inBarrier(x, y):#calculates if a point is inside a barrier
+	if():#magic
+
 def drive_F_B(distance): #forward & backward
 	
 def drive_FL_BR(distance): #forward left & backward right
@@ -74,3 +100,11 @@ def turn(degree):
 #Main Method
 
 #End Main Method
+#Classes
+class Point():#Class Point used for calculating the robots place in the arena
+	def __init__(x,y,rot,dist):
+		self.x = x#x value of the point inside the arena
+		self.y = y#y value of the point inside the as
+		self.rotation = rot#direction the robot has to face to face the point
+		self.distance = dist#distance between robot and point
+#End Classes
