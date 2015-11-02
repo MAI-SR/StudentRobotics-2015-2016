@@ -24,6 +24,26 @@ class CustomisedRuggeduino(Ruggeduino):
         with self.lock:
             resp=self.command("e")
         return int(resp)
+		
+    def motorStatusFL(self):
+        with self.lock:
+            resp=self.command("w")
+        return int(resp)
+		
+    def motorStatusBL(self):
+        with self.lock:
+            resp=self.command("x")
+        return int(resp)
+		
+    def motorStatusFR(self):
+        with self.lock:
+            resp=self.command("y")
+        return int(resp)
+		
+    def motorStatusBR(self):
+        with self.lock:
+            resp=self.command("z")
+        return int(resp)
 R = Robot.setup()
 R.ruggeduino_set_handler_by_fwver("SRcustom", CustomisedRuggeduino)
 R.init()
