@@ -14,6 +14,21 @@ int const trigUSB = 11;  //back
 int const echoUSB = 12;  //back
 int const trigUSR = 13;  //right
 int const echoUSR = 14;  //right
+
+int const motorFLA = 1;  //front left pin A
+int const motorFLB = 2;  //front left pin B
+int const motorBLA = 3;  //back left pin A
+int const motorBLB = 4;  //back left pin B
+int const motorFRA = 5;  //front right pin A
+int const motorFRB = 6;  //front right pin B
+int const motorBRA = 7;  //back right pin A
+int const motorBRB = 8;  //back right pin B
+
+volatile int counterFL = 0;
+volatile int counterBL = 0;
+volatile int counterFR = 0;
+volatile int counterBR = 0;
+
 uint8_t EnPwmCmd[4]={0x44,0x02,0xbb,0x01};    // distance measure command[copy-paste]
 void setup() {
   Serial.begin(SERIAL_BAUD);
@@ -29,6 +44,15 @@ void setup() {
   pinMode(trigUSR, OUTPUT);
   digitalWrite(trigUSR, HIGH);
   pinMode(echoUSR, INPUT);
+  
+  PCintPort::attachInterrupt(motorFLA, isrFLA, CHANGE);
+  PCintPort::attachInterrupt(motorFLB, isrFLB, CHANGE);
+  PCintPort::attachInterrupt(motorBLA, isrBLA, CHANGE);
+  PCintPort::attachInterrupt(motorBLB, isrBLB, CHANGE);
+  PCintPort::attachInterrupt(motorFRA, isrFRA, CHANGE);
+  PCintPort::attachInterrupt(motorFRB, isrFRB, CHANGE);
+  PCintPort::attachInterrupt(motorBRA, isrFRA, CHANGE);
+  PCintPort::attachInterrupt(motorBRB, isrFRB, CHANGE);
   for(int i=0;i<4;i++) {
       Serial.write(EnPwmCmd[i]);
   } 
@@ -82,6 +106,106 @@ void readUS(int trigPin, int echoPin){
   }  
 }
 
+void isrFLA(){
+  int a = digitalRead(motorFLA);
+  int b = digitalRead(motorFLB);
+  if(a == HIGH && b == LOW || a == LOW && b == HIGH){
+    counterFL++;
+  } else{//if(a == HIGH && b == HIGH || a == LOW && b == LOW)
+    counterFL--;
+  }
+}
+
+void isrFLB(){
+  int a = digitalRead(motorFLA);
+  int b = digitalRead(motorFLB);
+  if(a == HIGH && b == HIGH || a == LOW && b == LOW){
+    counterFL++;
+  } else {//if(a == HIGH && b == LOW || a == LOW && b == HIGH)
+    counterFL--;
+  }
+}
+
+void isrBLA(){
+  int a = digitalRead(motorBLA);
+  int b = digitalRead(motorBLB);
+  if(a == HIGH && b == LOW || a == LOW && b == HIGH){
+    counterBL++;
+  } else{//if(a == HIGH && b == HIGH || a == LOW && b == LOW)
+    counterBL--;
+  }
+}
+
+void isrBLB(){
+  int a = digitalRead(motorBLA);
+  int b = digitalRead(motorBLB);
+  if(a == HIGH && b == HIGH || a == LOW && b == LOW){
+    counterBL++;
+  } else {//if(a == HIGH && b == LOW || a == LOW && b == HIGH)
+    counterBL--;
+  }
+}
+
+void isrFRA(){
+  int a = digitalRead(motorFRA);
+  int b = digitalRead(motorFRB);
+  if(a == HIGH && b == LOW || a == LOW && b == HIGH){
+    counterFR++;
+  } else{//if(a == HIGH && b == HIGH || a == LOW && b == LOW)
+    counterFR--;
+  }
+}
+
+void isrFRB(){
+  int a = digitalRead(motorFRA);
+  int b = digitalRead(motorFRB);
+  if(a == HIGH && b == HIGH || a == LOW && b == LOW){
+    counterFR++;
+  } else {//if(a == HIGH && b == LOW || a == LOW && b == HIGH)
+    counterFR--;
+  }
+}
+
+void isrBRA(){
+  int a = digitalRead(motorBRA);
+  int b = digitalRead(motorBRB);
+  if(a == HIGH && b == LOW || a == LOW && b == HIGH){
+    counterBR++;
+  } else{//if(a == HIGH && b == HIGH || a == LOW && b == LOW)
+    counterBR--;
+  }
+}
+
+void isrBRB(){
+  int a = digitalRead(motorBRA);
+  int b = digitalRead(motorBRB);
+  if(a == HIGH && b == HIGH || a == LOW && b == LOW){
+    counterBR++;
+  } else {//if(a == HIGH && b == LOW || a == LOW && b == HIGH)
+    counterBR--;
+  }
+}
+
+void motorStatusFL(){
+   Serial.print(counterFL);
+   counterFL=0;
+}
+
+void motorStatusBL(){
+   Serial.print(counterBL);
+   counterBL=0;
+}
+
+void motorStatusFR(){
+   Serial.print(counterFR);
+   counterFR=0;
+}
+
+void motorStatusBR(){
+   Serial.print(counterBR);
+   counterBR=0;
+}
+
 void loop() {
   // Fetch all commands that are in the buffer
   while (Serial.available()) {
@@ -124,6 +248,24 @@ void loop() {
         break;
       case 'e':
         readUS(trigUSR, echoUSR);
+        break;
+      case 'u':
+        counterFL = 0;
+        counterBL = 0;
+        counterFR = 0;
+        counterBR = 0;
+        break;
+      case 'w':
+        motorStatusFL();
+        break;
+      case 'x':
+        motorStatusBL();
+        break;
+      case 'y':
+        motorStatusFR();
+        break;
+      case 'z':
+        motorStatusBR();
         break;
       default:
         // A problem here: we do not know how to handle the command!

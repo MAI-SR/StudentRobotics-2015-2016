@@ -24,20 +24,46 @@ class CustomisedRuggeduino(Ruggeduino):
         with self.lock:
             resp=self.command("e")
         return int(resp)
+	
+	def motorReset(self):
+		with self.lock:
+			resp=self.command("u")
+		return int(resp)
+		
+    def motorStatusFL(self):
+        with self.lock:
+            resp=self.command("w")
+        return int(resp)
+		
+    def motorStatusBL(self):
+        with self.lock:
+            resp=self.command("x")
+        return int(resp)
+		
+    def motorStatusFR(self):
+        with self.lock:
+            resp=self.command("y")
+        return int(resp)
+		
+    def motorStatusBR(self):
+        with self.lock:
+            resp=self.command("z")
+        return int(resp)
 R = Robot.setup()
 R.ruggeduino_set_handler_by_fwver("SRcustom", CustomisedRuggeduino)
 R.init()
 R.wait_start()
 #End Custom Ruggeduino
 #Constants
+wheelCircumfrence = 0.314
+robotCircumfrence = 1.1
 
+tpm = 10186 #ticks per meter (motor) [genauer: 10185,916357881301489208560855841]
+
+turnpwer = 100 #motor power while turning
 #End Constants
 #Variables
-robotrotation = 45#current direction the robot is facing
-robotX = 0#current x position of the robot
-robotY = 0#current y position of the robot
-calculatedUS#value the ultasonic sensor is suposed to give clockwhise
-token = null#current token the robot is trying to get or null for when its not searcing for a token
+
 #End Variables 
 #Methods
 
@@ -64,47 +90,46 @@ def setServo(servo, value = 0):
 #End Setter
 #Getter
 #End Getter
-
-def calculateUS(usnumber):#calculates the value the ulrasonic sensor is suposed to give
-	rotation = robotrotation + usnumber*90#magic
-	if rotation == token.rotation:
-		calculatedUS = token
-		return
-	barrier = false
-	dist = 0.00
-	while barrier == false:
-		dist = dist+0.05
-		tmpPoint = calculatePoint(dist,rotation)
-		barrier = inBarrier(tmpPoint[0],tmpPoint[1])
-	calculatedUS = Point(tmpPoint[0],tmpPoint[1],rotation,dist)
-	
-def alculatePoint(dist, rotation):#calculates a point in relation to the robots current position
-	tmpX = robotX + math.cos(rotation)*dist#magic
-	tmpY = robotY + math.sin(rotation)*dist
-	return (tmpX, tmpY)
-
-def inBarrier(x, y):#calculates if a point is inside a barrier
-	if():#magic
-
 def drive_F_B(distance): #forward & backward
+	print "ToDo"
 	
 def drive_FL_BR(distance): #forward left & backward right
+	print "ToDo"
 
 def drive_L_R(distance): #left & right
+	print "ToDo"
 
 def drive_FR_BL(distance): #forward right & backward left
+	print "ToDo"
 	
 def turn(degree):
+	print "ToDo"
+	if degree >= 0:
+		setMotor("FL", turnpower)
+		setMotor("BL", turnpower)
+		setMotor("FR", turnpower)
+		setMotor("BR", turnpower)
+	else:
+		setMotor("FL", -turnpower)
+		setMotor("BL", -turnpower)
+		setMotor("FR", -turnpower)
+		setMotor("BR", -turnpower)
+	tickdegree = abs((((degree / 360.0) * robotCircumfrence) / wheelCircumfrence) * 3200)
+	tickcount = 0
+	while tickcount < tickdegree:
+		tickcount = tickcount + abs(motorStatusFL)
+	setMotor("FL", 0)
+	setMotor("BL", 0)
+	setMotor("FR", 0)
+	setMotor("BR", 0)
 
 #End Methods
 #Main Method
 
 #End Main Method
 #Classes
-class Point():#Class Point used for calculating the robots place in the arena
+class Point(): #Class Point used for calculating the robots place in the arena
 	def __init__(x,y,rot,dist):
-		self.x = x#x value of the point inside the arena
-		self.y = y#y value of the point inside the as
-		self.rotation = rot#direction the robot has to face to face the point
-		self.distance = dist#distance between robot and point
+		self.x = x #x value of the point inside the arena
+		self.y = y #y value of the point inside the arena
 #End Classes
