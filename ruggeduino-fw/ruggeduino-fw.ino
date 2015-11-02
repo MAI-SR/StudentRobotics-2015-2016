@@ -249,6 +249,12 @@ void loop() {
       case 'e':
         readUS(trigUSR, echoUSR);
         break;
+      case 'u':
+        counterFL = 0;
+        counterBL = 0;
+        counterFR = 0;
+        counterBR = 0;
+        break;
       case 'w':
         motorStatusFL();
         break;

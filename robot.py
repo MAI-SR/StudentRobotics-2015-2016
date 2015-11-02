@@ -24,6 +24,11 @@ class CustomisedRuggeduino(Ruggeduino):
         with self.lock:
             resp=self.command("e")
         return int(resp)
+	
+	def motorReset(self):
+		with self.lock:
+			resp=self.command("u")
+		return int(resp)
 		
     def motorStatusFL(self):
         with self.lock:
@@ -50,7 +55,12 @@ R.init()
 R.wait_start()
 #End Custom Ruggeduino
 #Constants
+wheelCircumfrence = 0.314
+robotCircumfrence = 1.1
 
+tpm = 10186 #ticks per meter (motor) [genauer: 10185,916357881301489208560855841]
+
+turnpwer = 100 #motor power while turning
 #End Constants
 #Variables
 
@@ -94,6 +104,24 @@ def drive_FR_BL(distance): #forward right & backward left
 	
 def turn(degree):
 	print "ToDo"
+	if degree >= 0:
+		setMotor("FL", turnpower)
+		setMotor("BL", turnpower)
+		setMotor("FR", turnpower)
+		setMotor("BR", turnpower)
+	else:
+		setMotor("FL", -turnpower)
+		setMotor("BL", -turnpower)
+		setMotor("FR", -turnpower)
+		setMotor("BR", -turnpower)
+	tickdegree = abs((((degree / 360.0) * robotCircumfrence) / wheelCircumfrence) * 3200)
+	tickcount = 0
+	while tickcount < tickdegree:
+		tickcount = tickcount + abs(motorStatusFL)
+	setMotor("FL", 0)
+	setMotor("BL", 0)
+	setMotor("FR", 0)
+	setMotor("BR", 0)
 
 #End Methods
 #Main Method
