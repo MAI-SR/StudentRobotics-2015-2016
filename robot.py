@@ -93,15 +93,15 @@ def setServo(servo, value = 0):
 def drive_F_B(distance): #forward & backward
 	print "ToDo"
 	
-def drive_FL_BR(distance): #forward left & backward right
-	print "ToDo"
-
 def drive_L_R(distance): #left & right
 	print "ToDo"
 
 def drive_FR_BL(distance): #forward right & backward left
 	print "ToDo"
 	
+def drive_FL_BR(distance): #forward left & backward right
+	print "ToDo"
+
 def turn(degree):
 	print "ToDo"
 	if degree >= 0:
