@@ -1,0 +1,22 @@
+counting starts with 0
+
+front of the robot is where the camera points
+
+left = 0|right = 1
+	front = 0|back = 1
+	
+Coordinates (0|0) at starting corner
+	0°  on x-axis
+	90° on y-axis
+	(degrees counter-clockwise)
+
+Servos
+	left = 0
+	back = 1
+	right = 2
+	front_height = 3
+	front_grabber = 4
+	front_turn = 5
+
+Camera
+	---ToDo---
