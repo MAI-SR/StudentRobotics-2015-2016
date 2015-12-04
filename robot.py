@@ -1,5 +1,6 @@
 from sr.robot import *
 from decimal import *
+import threading
 import time
 import math
 
@@ -62,6 +63,19 @@ tpm = 10186 #ticks per meter (motor) [genauer: 10185,916357881301489208560855841
 
 turnpwer = 100 #motor power while turning
 #End Constants
+#Threads API
+	#error
+errorToken = False #lost a token?
+errorTokenF = False #lost the token?
+errorTokenL = False #lost the token?
+errorTokenB = False #lost the token?
+errorTokenR = False #lost the token?
+	#SensorThread
+hasTokenF = False #should there be a Token?
+hasTokenL = False #should there be a Token?
+hasTokenB = False #should there be a Token?
+hasTokenR = False #should there be a Token?
+#End Threads API
 #Variables
 
 #End Variables 
@@ -78,7 +92,7 @@ def setMotor(motor, speed = 0): #set Motor power
 	elif motor == "BR": #back right
 		R.motors[1].m1.power = speed
 
-def setServo(servo, value = 0):
+def setServo(servo, value = 0): #set Servo position
 	if servo == "": #Servo0Name
 		R.servos[0][0] = value
 	elif servo == "": #Servo1Name
@@ -102,7 +116,7 @@ def drive_FR_BL(distance): #forward right & backward left
 def drive_FL_BR(distance): #forward left & backward right
 	print "ToDo"
 
-def turn(degree):
+def turn(degree): #turn 
 	print "ToDo"
 	if degree >= 0:
 		setMotor("FL", turnpower)
@@ -125,6 +139,10 @@ def turn(degree):
 
 #End Methods
 #Main Method
+	#Thread start
+sensors = SensorThread(1, "sensors", 1)
+sensors.start()
+	#End Thread start
 
 #End Main Method
 #Classes
@@ -132,4 +150,17 @@ class Point(): #Class Point used for calculating the robots place in the arena
 	def __init__(x,y,rot,dist):
 		self.x = x #x value of the point inside the arena
 		self.y = y #y value of the point inside the arena
+class SensorThread (threading.Thread):
+	def __init__(self, threadID, name, counter):
+		threading.Thread.__init__(self)
+		self.threadID = threadID
+		self.name = name
+		self.counter = counter
+	def run(self):
+		while True:
+			errorTokenF = readUSF >= 10 && hasTokenF
+			errorTokenL = readUSL >= 10 && hasTokenL
+			errorTokenB = readUSB >= 10 && hasTokenB
+			errorTokenR = readUSR >= 10 && hasTokenR
+			errorToken = errorTokenF || errorTokenL || errorTokenB || errorTokenR
 #End Classes
