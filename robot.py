@@ -56,11 +56,13 @@ R.init()
 R.wait_start()
 #End Custom Ruggeduino
 #Constants
+	#Hard
 wheelCircumfrence = 0.314
 robotCircumfrence = 1.1
 
-tpm = 10186 #ticks per meter (motor) [genauer: 10185,916357881301489208560855841]
-
+tpcm = 101.86 #ticks per centimeter (motor) [genauer: 101,85916357881301489208560855841]
+	#Soft
+motorspeed = 100
 turnpwer = 100 #motor power while turning
 #End Constants
 #Threads API
@@ -91,7 +93,13 @@ def setMotor(motor, speed = 0): #set Motor power
 		R.motors[1].m0.power = speed
 	elif motor == "BR": #back right
 		R.motors[1].m1.power = speed
-
+		
+def setAllMotor(fl, bl, fr, br): #set all motors
+	setMotor("FL", fl*motorspeed)
+	setMotor("BL", bl*motorspeed)
+	setMotor("FR", fr*motorspeed)
+	setMotor("BR", br*motorspeed)
+		
 def setServo(servo, value = 0): #set Servo position
 	if servo == "": #Servo0Name
 		R.servos[0][0] = value
@@ -105,7 +113,14 @@ def setServo(servo, value = 0): #set Servo position
 #Getter
 #End Getter
 def drive_F_B(distance): #forward & backward
-	print "ToDo"
+	if distance > 0:
+		setAllMotor(-1, -1, 1, 1)
+	else:
+		setAllMotor(1, 1, -1, -1)
+	drive = DriveThread(2, "drive", 2, dist_to_ticks_straight(distance))
+	drive.start()
+	drive.join()
+	setAllMotor(0, 0, 0, 0)
 	
 def drive_L_R(distance): #left & right
 	print "ToDo"
@@ -116,6 +131,12 @@ def drive_FR_BL(distance): #forward right & backward left
 def drive_FL_BR(distance): #forward left & backward right
 	print "ToDo"
 
+def dist_to_ticks_diagonal(cm):
+	return cm*tpcm
+
+def dist_to_ticks_straight(cm):
+	return (cm/sqrt(2))*tpcm
+	
 def turn(degree): #turn 
 	print "ToDo"
 	if degree >= 0:
@@ -163,4 +184,13 @@ class SensorThread (threading.Thread):
 			errorTokenB = readUSB >= 10 && hasTokenB
 			errorTokenR = readUSR >= 10 && hasTokenR
 			errorToken = errorTokenF || errorTokenL || errorTokenB || errorTokenR
+class DriveThread (threading.Thread):
+	def __init__(self, threadID, name, counter, ticks):
+		threading.Thread.__init__(self)
+		self.threadID = threadID
+		self.name = name
+		self.counter = counter
+		self.ticks = ticks
+	def run(self):
+		while True:
 #End Classes
