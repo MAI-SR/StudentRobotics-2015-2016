@@ -88,7 +88,7 @@ hasTokenB = False #should there be a Token?
 hasTokenR = False #should there be a Token?
 #End Threads API
 #Variables
-
+state = "start"
 #End Variables 
 #Methods
 
@@ -167,13 +167,62 @@ def turn(degree): #turn
 	setMotor("FR", 0)
 	setMotor("BR", 0)
 
+def search():
+	counter = 0
+	found = False
+	while counter > 72 || found:
+		markers = R.see()
+		if len(markers) == 0:
+			break;
+		else:
+			markers = markers.sort()
+			for m in markers:
+				
+	if found:
+		state = "gotoToken"
 #End Methods
 #Main Method
 	#Thread start
 sensors = SensorThread(1, "sensors", 1)
 sensors.start()
 	#End Thread start
+while True:
+	if state == "start":
+		state = "searching"
+	
+	elif state == "searching":
+		search()
+		print "ToDo"
+		
 
+	elif state == "gotoToken":
+		print "ToDo"
+	
+	elif state == "pickupToken":
+		print "ToDo"
+	
+	elif state == "calcPos":
+		print "ToDo"
+		state = "gotoCorner"
+	
+	elif state == "gotoCorner":
+		print "ToDo"
+		state = "turnToken"
+	
+	elif state == "turnToken":
+		print "ToDo"
+	
+	elif state == "putdownToken":
+		print "ToDo"
+	
+	elif state == "switchToken":
+		print "ToDo"
+	
+	elif state == "stop":
+		print "ToDo"
+	
+	else:
+		print "You broke it! L3rn 70 wr1t3 y0u f4g!"
 #End Main Method
 #Classes
 class Point(): #Class Point used for calculating the robots place in the arena
