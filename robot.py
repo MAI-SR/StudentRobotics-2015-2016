@@ -73,6 +73,8 @@ tpcm = 101.86 #ticks per centimeter (motor) [genauer: 101,8591635788130148920856
 	#Soft
 motorspeed = 100
 turnpwer = 100 #motor power while turning
+
+abortSearchTime = 100 #if searching and not enough time is left
 #End Constants
 #Threads API
 	#error
@@ -86,6 +88,8 @@ hasTokenF = False #should there be a Token?
 hasTokenL = False #should there be a Token?
 hasTokenB = False #should there be a Token?
 hasTokenR = False #should there be a Token?
+	#TimeThread
+remainingTime = 180
 #End Threads API
 #Variables
 state = "start"
@@ -168,34 +172,50 @@ def turn(degree): #turn
 	setMotor("BR", 0)
 
 def search():
+	if (remainingTime <= abortSearchTime && (hasTokenF || hasTokenL || hasTokenB || hasTokenR)) || (hasTokenF && hasTokenL && hasTokenB && hasTokenR): #if (not enough time left and has at least one token) or (has already all tokens)
+		state = "calcPos"
+		crossStateInfo = None
+		return
 	counter = 0
 	found = False
-	while counter > 72 || found:
+	while counter < 24 || !found:
 		markers = R.see()
 		if len(markers) == 0:
-			break;
+			turn(15)
 		else:
 			markers = markers.sort()
 			for m in markers:
-				
+				if m.info.marker_type == MARKER_TOKEN_TOP || m.info.marker_type == MARKER_TOKEN_SIDE || m.info.marker_type == MARKER_TOKEN_BOTTOM
+					found = True
+					crossStateInfo = m
+					break
+				else:
+					turn(15)
 	if found:
 		state = "gotoToken"
+
+def gotoToken(m):
+	turn(m.polar.x)
+	drive(m.dist)
+	
 #End Methods
 #Main Method
 	#Thread start
-sensors = SensorThread(1, "sensors", 1)
-sensors.start()
+timeT = TimeThread(1, "time", 1)
+timeT.start()
+sensorsT = SensorThread(2, "sensors", 2)
+sensorsT.start()
 	#End Thread start
+crossStateInfo = None
 while True:
 	if state == "start":
 		state = "searching"
 	
 	elif state == "searching":
 		search()
-		print "ToDo"
 		
-
 	elif state == "gotoToken":
+		gotoToken(crossStateInfo)
 		print "ToDo"
 	
 	elif state == "pickupToken":
@@ -229,6 +249,16 @@ class Point(): #Class Point used for calculating the robots place in the arena
 	def __init__(x,y,rot,dist):
 		self.x = x #x value of the point inside the arena
 		self.y = y #y value of the point inside the arena
+class TimeThread (threading.Thread):
+	def __init__(self, threadID, name, counter):
+		threading.Thread.__init__(self)
+		self.threadID = threadID
+		self.name = name
+		self.counter = counter
+	def run(self):
+		endTime = time.time() + 180
+		while True:
+			remainingTime = endTime - time.time()
 class SensorThread (threading.Thread):
 	def __init__(self, threadID, name, counter):
 		threading.Thread.__init__(self)
