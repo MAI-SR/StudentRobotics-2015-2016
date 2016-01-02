@@ -72,7 +72,6 @@ robotCircumfrence = 1.1
 tpcm = 101.86 #ticks per centimeter (motor) [genauer: 101,85916357881301489208560855841]
 	#Soft
 motorspeed = 100
-turnpwer = 100 #motor power while turning
 
 abortSearchTime = 100 #if searching and not enough time is left
 #End Constants
@@ -150,42 +149,32 @@ def dist_to_ticks_diagonal(cm):
 def dist_to_ticks_straight(cm):
 	return (cm/sqrt(2))*tpcm
 	
-def turn(degree): #turn 
-	print "ToDo"
-	if degree >= 0:
-		setMotor("FL", turnpower)
-		setMotor("BL", turnpower)
-		setMotor("FR", turnpower)
-		setMotor("BR", turnpower)
-	else:
-		setMotor("FL", -turnpower)
-		setMotor("BL", -turnpower)
-		setMotor("FR", -turnpower)
-		setMotor("BR", -turnpower)
-	tickdegree = abs((((degree / 360.0) * robotCircumfrence) / wheelCircumfrence) * 3200)
-	tickcount = 0
-	while tickcount < tickdegree:
-		tickcount = tickcount + abs(motorStatusFL)
-	setMotor("FL", 0)
-	setMotor("BL", 0)
-	setMotor("FR", 0)
-	setMotor("BR", 0)
+def turn(degree): #turn
+    tickcount = 0
+    degreeticks = int(((abs(degree/360)*robotCircumfrence)/wheelCircumfrence)*3200)
+    if degree > 0:#+ = Counterclockwise
+        setAllMotor(1, 1, 1, 1)
+    else:#- = Clockwise
+        setAllMotor(-1, -1, -1, -1)
+    while degreeticks > tickcount:
+        tickcount += int((motorStatusFL()+motorStatusBL()+motorStatusFR()+motorStatusBR())/4)
+    setAllMotor(0, 0, 0, 0)
 
 def search():
-	if (remainingTime <= abortSearchTime && (hasTokenF || hasTokenL || hasTokenB || hasTokenR)) || (hasTokenF && hasTokenL && hasTokenB && hasTokenR): #if (not enough time left and has at least one token) or (has already all tokens)
+	if (remainingTime <= abortSearchTime and (hasTokenF or hasTokenL or hasTokenB or hasTokenR)) or (hasTokenF and hasTokenL and hasTokenB and hasTokenR): #if (not enough time left and has at least one token) or (has already all tokens)
 		state = "calcPos"
 		crossStateInfo = None
 		return
 	counter = 0
 	found = False
-	while counter < 24 || !found:
+	while counter < 24 or !found:
 		markers = R.see()
 		if len(markers) == 0:
 			turn(15)
 		else:
 			markers = markers.sort()
 			for m in markers:
-				if m.info.marker_type == MARKER_TOKEN_TOP || m.info.marker_type == MARKER_TOKEN_SIDE || m.info.marker_type == MARKER_TOKEN_BOTTOM
+				if m.info.marker_type == MARKER_TOKEN_TOP or m.info.marker_type == MARKER_TOKEN_SIDE or m.info.marker_type == MARKER_TOKEN_BOTTOM
 					found = True
 					crossStateInfo = m
 					break
@@ -267,11 +256,11 @@ class SensorThread (threading.Thread):
 		self.counter = counter
 	def run(self):
 		while True:
-			errorTokenF = readUSF >= 10 && hasTokenF
-			errorTokenL = readUSL >= 10 && hasTokenL
-			errorTokenB = readUSB >= 10 && hasTokenB
-			errorTokenR = readUSR >= 10 && hasTokenR
-			errorToken = errorTokenF || errorTokenL || errorTokenB || errorTokenR
+			errorTokenF = readUSF >= 10 and hasTokenF
+			errorTokenL = readUSL >= 10 and hasTokenL
+			errorTokenB = readUSB >= 10 and hasTokenB
+			errorTokenR = readUSR >= 10 and hasTokenR
+			errorToken = errorTokenF or errorTokenL or errorTokenB or errorTokenR
 class DriveThread (threading.Thread):
 	def __init__(self, threadID, name, counter, ticks):
 		threading.Thread.__init__(self)
