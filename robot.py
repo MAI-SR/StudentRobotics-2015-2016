@@ -1,5 +1,5 @@
 #########################################################################################################################################
-#Disclaimer:																															#
+#Disclaimer:    																														#
 #---------------------------------------------------------------------------------------------------------------------------------------#
 #You can use this code for any and all educational purposes.																			#
 #If you want to use it for the Student Robotics Contest you will have to send us an email and link our GitHub repository in your code.	#
@@ -15,11 +15,11 @@ import math
 
 #Custom Ruggeduino
 class CustomisedRuggeduino(Ruggeduino):
-	def readUSF(self):
+    def readUSF(self):
         with self.lock:
-            resp=self.command("b")
+			resp=self.command("b")
         return int(resp)
-    
+        
     def readUSL(self):
         with self.lock:
             resp=self.command("c")
@@ -147,7 +147,7 @@ def dist_to_ticks_diagonal(cm):
 	return cm*tpcm
 
 def dist_to_ticks_straight(cm):
-	return (cm/sqrt(2))*tpcm
+	return (cm/math.sqrt(2))*tpcm
 	
 def turn(degree): #turn
     tickcount = 0
@@ -167,14 +167,14 @@ def search():
 		return
 	counter = 0
 	found = False
-	while counter < 24 or !found:
+	while counter < 24 or not found:
 		markers = R.see()
 		if len(markers) == 0:
 			turn(15)
 		else:
 			markers = markers.sort()
 			for m in markers:
-				if m.info.marker_type == MARKER_TOKEN_TOP or m.info.marker_type == MARKER_TOKEN_SIDE or m.info.marker_type == MARKER_TOKEN_BOTTOM
+				if m.info.marker_type == MARKER_TOKEN_TOP or m.info.marker_type == MARKER_TOKEN_SIDE or m.info.marker_type == MARKER_TOKEN_BOTTOM:
 					found = True
 					crossStateInfo = m
 					break
@@ -185,11 +185,50 @@ def search():
 
 def gotoToken(m):
 	turn(m.polar.x)
-	drive(m.dist)
+	drive_F_B(m.dist)
 	
 #End Methods
+#Classes
+class ArenaPoint(): #Class ArenaPoint used for calculating the robots place in the arena
+	def __init__(self, x, y, rot, dist):
+		self.x = x #x value of a point inside the arena
+		self.y = y #y value of a point inside the arena
+class TimeThread (threading.Thread):
+	def __init__(self, threadID, name, counter):
+		threading.Thread.__init__(self)
+		self.threadID = threadID
+		self.name = name
+		self.counter = counter
+	def run(self):
+		endTime = time.time() + 180
+		while True:
+			remainingTime = endTime - time.time()
+class SensorThread (threading.Thread):
+	def __init__(self, threadID, name, counter):
+		threading.Thread.__init__(self)
+		self.threadID = threadID
+		self.name = name
+		self.counter = counter
+	def run(self):
+		while True:
+			errorTokenF = readUSF() >= 10 and hasTokenF
+			errorTokenL = readUSL() >= 10 and hasTokenL
+			errorTokenB = readUSB() >= 10 and hasTokenB
+			errorTokenR = readUSR() >= 10 and hasTokenR
+			errorToken = errorTokenF or errorTokenL or errorTokenB or errorTokenR
+class DriveThread (threading.Thread):
+	def __init__(self, threadID, name, counter, ticks):
+		threading.Thread.__init__(self)
+		self.threadID = threadID
+		self.name = name
+		self.counter = counter
+		self.ticks = ticks
+	def run(self):
+		while True:
+			print "ToDo"
+#End Classes
 #Main Method
-	#Thread start
+    #Thread start
 timeT = TimeThread(1, "time", 1)
 timeT.start()
 sensorsT = SensorThread(2, "sensors", 2)
@@ -233,41 +272,3 @@ while True:
 	else:
 		print "You broke it! L3rn 70 wr1t3 y0u f4g!"
 #End Main Method
-#Classes
-class Point(): #Class Point used for calculating the robots place in the arena
-	def __init__(x,y,rot,dist):
-		self.x = x #x value of the point inside the arena
-		self.y = y #y value of the point inside the arena
-class TimeThread (threading.Thread):
-	def __init__(self, threadID, name, counter):
-		threading.Thread.__init__(self)
-		self.threadID = threadID
-		self.name = name
-		self.counter = counter
-	def run(self):
-		endTime = time.time() + 180
-		while True:
-			remainingTime = endTime - time.time()
-class SensorThread (threading.Thread):
-	def __init__(self, threadID, name, counter):
-		threading.Thread.__init__(self)
-		self.threadID = threadID
-		self.name = name
-		self.counter = counter
-	def run(self):
-		while True:
-			errorTokenF = readUSF >= 10 and hasTokenF
-			errorTokenL = readUSL >= 10 and hasTokenL
-			errorTokenB = readUSB >= 10 and hasTokenB
-			errorTokenR = readUSR >= 10 and hasTokenR
-			errorToken = errorTokenF or errorTokenL or errorTokenB or errorTokenR
-class DriveThread (threading.Thread):
-	def __init__(self, threadID, name, counter, ticks):
-		threading.Thread.__init__(self)
-		self.threadID = threadID
-		self.name = name
-		self.counter = counter
-		self.ticks = ticks
-	def run(self):
-		while True:
-#End Classes
