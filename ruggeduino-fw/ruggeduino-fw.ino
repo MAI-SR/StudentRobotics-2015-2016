@@ -17,23 +17,24 @@
 
 #define FW_VER 0
 
-int const trigUSF = 7;  //front
-int const echoUSF = 8;  //front
-int const trigUSL = 9;  //left
-int const echoUSL = 10;  //left
-int const trigUSB = 11;  //back
-int const echoUSB = 12;  //back
-int const trigUSR = 13;  //right
-int const echoUSR = 14;  //right
+int const trigUSF = A1;  //front - Analogue Pin
+int const trigUSL = A2;  //left - Analogue Pin
+int const trigUSB = A3;  //back - Analogue Pin
+int const trigUSR = A4;  //right - Analogue Pin
 
-int const motorFLA = 1;  //front left pin A
-int const motorFLB = 2;  //front left pin B
-int const motorBLA = 3;  //back left pin A
-int const motorBLB = 4;  //back left pin B
-int const motorFRA = 5;  //front right pin A
-int const motorFRB = 6;  //front right pin B
-int const motorBRA = 7;  //back right pin A
-int const motorBRB = 8;  //back right pin B
+int const echoUSF = 10;  //front
+int const echoUSL = 11;  //left
+int const echoUSB = 12;  //back
+int const echoUSR = 13;  //right
+
+int const motorFLA = 2;  //front left pin A
+int const motorFLB = 3;  //front left pin B
+int const motorBLA = 4;  //back left pin A
+int const motorBLB = 5;  //back left pin B
+int const motorFRA = 6;  //front right pin A
+int const motorFRB = 7;  //front right pin B
+int const motorBRA = 8;  //back right pin A
+int const motorBRB = 9;  //back right pin B
 
 volatile int counterFL = 0;
 volatile int counterBL = 0;
@@ -109,8 +110,8 @@ void readUS(int trigPin, int echoPin){
     
   unsigned long DistanceMeasured=pulseIn(echoPin,LOW);
     
-  if(DistanceMeasured>=10200) {              // the reading is invalid.
-    Serial.println("Invalid");    
+  if(DistanceMeasured>=45000) {              // the reading is invalid.
+    Serial.println(10000);    
   } else {
     unsigned int DistanceReal = DistanceMeasured/50;           // every 50us low level stands for 1cm
     Serial.print(DistanceReal);
