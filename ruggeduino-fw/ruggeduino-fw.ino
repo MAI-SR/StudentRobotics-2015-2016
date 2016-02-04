@@ -63,8 +63,8 @@ void setup() {
   PCintPort::attachInterrupt(motorBLB, isrBLB, CHANGE);
   PCintPort::attachInterrupt(motorFRA, isrFRA, CHANGE);
   PCintPort::attachInterrupt(motorFRB, isrFRB, CHANGE);
-  PCintPort::attachInterrupt(motorBRA, isrFRA, CHANGE);
-  PCintPort::attachInterrupt(motorBRB, isrFRB, CHANGE);
+  PCintPort::attachInterrupt(motorBRA, isrBRA, CHANGE);
+  PCintPort::attachInterrupt(motorBRB, isrBRB, CHANGE);
   for(int i=0;i<4;i++) {
       Serial.write(EnPwmCmd[i]);
   } 
