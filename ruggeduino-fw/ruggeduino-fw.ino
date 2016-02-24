@@ -110,7 +110,7 @@ void readUS(int trigPin, int echoPin){
     
   unsigned long DistanceMeasured=pulseIn(echoPin,LOW);
     
-  if(DistanceMeasured>=45000) {              // the reading is invalid.
+  if(DistanceMeasured>=25000) {              // the reading is invalid.
     Serial.println(10000);    
   } else {
     unsigned int DistanceReal = DistanceMeasured/50;           // every 50us low level stands for 1cm
