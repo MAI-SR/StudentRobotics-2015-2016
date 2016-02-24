@@ -1,5 +1,5 @@
 #########################################################################################################################################
-#Disclaimer:    																														#
+#Disclaimer:        																													#
 #---------------------------------------------------------------------------------------------------------------------------------------#
 #You can use this code for any and all educational purposes.																			#
 #If you want to use it for the Student Robotics Contest you will have to send us an email and link our GitHub repository in your code.	#
@@ -66,23 +66,8 @@ R.wait_start()
 #End Custom Ruggeduino
 #Constants
 	#Hard
-wheelCircumfrence = 0.314
-robotCircumfrence = 1.1
-
-tpcm = 101.86 #ticks per centimeter (motor) [genauer: 101,85916357881301489208560855841]
-	#Soft
-motorspeed = 50
-turnpwer = 50
-
-ServoGrabOpen = 70 #ToDo
-ServoGrabClose = 20 #ToDo
-ServoCamUp = 50 #ToDo
-ServoCamDown = 30 #ToDo
-ServoLiftUp = 30 #ToDo
-ServoLiftDown = 30 #ToDo
-ServoTiltUp = 30 #ToDo
-ServoTiltDown = 30 #ToDo
-
+wheelCircumfrence = 0.3141
+robotCircumfrence = 1.0838#.....
 
 abortSearchTime = 100 #if searching and not enough time is left
 remainingTime = 180
@@ -105,129 +90,111 @@ hasTokenR = False #should there be a Token?
 state = "start"
 currentFrontToken = None
 
-currentFL = 0
-currentBL = 0
-currentFR = 0
-currentBR = 0
 #End Variables 
 #Methods
 
 #Setter
-def resetcurrent():
-	currentFL = 0
-	currentBL = 0
-	currentFR = 0
-	currentBR = 0
+def setMotor(motor, speed): #set Motor power
+    if motor == "FL": #front left
+		R.motors[1].m1.power = int(speed)
+    elif motor == "BL": #back left
+    	R.motors[1].m0.power = int(speed)
+    elif motor == "FR": #front right
+    	R.motors[0].m0.power = int(speed)
+    elif motor == "BR": #back right
+    	R.motors[0].m1.power = int(speed)
 
-def setMotor(motor, speed = 0): #set Motor power
-	if motor == "FL": #front left
-		R.motors[0].m0.power = speed
-	elif motor == "BL": #back left
-		R.motors[0].m1.power = speed
-	elif motor == "FR": #front right
-		R.motors[1].m0.power = speed
-	elif motor == "BR": #back right
-		R.motors[1].m1.power = speed
-		
 def setAllMotor(fl, bl, fr, br): #set all motors
-	setMotor("FL", fl*motorspeed)
-	setMotor("BL", bl*motorspeed)
-	setMotor("FR", fr*motorspeed)
-	setMotor("BR", br*motorspeed)
-		
-def setServo(servo, value = 0): #Servos for grabbing the token
-	if servo == "ArmF": #ServoArmFront
-		R.servos[0][0] = value
-	elif servo == "ArmL": #ServoArmLeft
-		R.servos[0][1] = value
-	elif servo == "ArmB": #ServoArmBack
-		R.servos[0][2] = value
-	elif servo == "ArmR": #ServoArmRight
-		R.servos[0][3] = value
-	elif servo == "TokenTilt": #ServoTokenTilt
-		R.servos[0][4] = value
-	elif servo == "TokenLift": #ServoTokenLift
-		R.servos[0][5] = value
-	elif servo == "Cam": #ServoCam
-		R.servos[0][6] = value
+    setMotor("FL", fl)
+    setMotor("FR", fr)
+    setMotor("BR", br)
+    setMotor("BL", bl)
+
 #End Setter
 #Getter
 #End Getter
-def drive_F_B(distance): #forward & backward
-	distance /= 2#every motor only has to drive half the total distance due to vectoradition
-	distance *= math.sqrt(2)#length of the vector every motor has to drive
-	tickdistance = int(abs((distance/wheelCircumfrence)*3200))#ticks every motor has to drive
-	tickcount = 0#amount of ticks alredy driven
-	if distance > 0:#forward
-		setAllMotor(-1, -1, 1, 1)
-		direction = 1
-	else:#backward
-		setAllMotor(1, 1, -1, -1)
-		direction = 0
-	while tickdistance > tickcount:
-		tickcount += motorSpeedCoretion_F_B_and_L_R()
-	setAllMotor(0, 0, 0, 0)
-	resetcurrent()
+#Move Arms
+def grabSide(side, state):#true == zu
+    if(side == 'right'):
+        if(state):
+            R.servos[0][1] = -10
+        else:
+            R.servos[0][1] = 70
+    elif(side == 'left'):
+        if(state):
+            R.servos[0][5] = 10
+        else:
+            R.servos[0][5] = -70
+    elif(side == 'back'):
+        if(state):
+            R.servos[0][0] = -10
+        else:
+            R.servos[0][0] = 70
+    elif(side == 'front'):
+        if(state):
+            R.servos[0][7] = -40
+        else:
+            R.servos[0][7] = 60
+    else:
+        print 'You missspelled back/left/right/front, by spelling' + str(state)
 
-	
-def drive_L_R(distance): #left & right
-	distance /= 2#every motor only has to drive half the total distance due to vectoradition
-	distance *= math.sqrt(2)#length of the vector every motor has to drive
-	tickdistance = int(abs((distance/wheelCircumfrence)*3200))#ticks every motor has to drive
-	tickcount = 0#amount of ticks alredy driven
-	if distance > 0:#right
-		setAllMotor(-1, 1, -1, 1)
-		direction = 1
-	else:#left
-		setAllMotor(1, -1, 1, -1)
-		direction = 0
-	while tickdistance > tickcount:
-		tickcount += motorSpeedCoretion_F_B_and_L_R()
-	setAllMotor(0, 0, 0, 0)
-	resetcurrent()
-
-def motorSpeedCoretion_F_B_and_L_R():
-    global currentFL, currentBL, currentFR, currentBR
-    tick_FL = R.ruggeduinos[0].motorStatusFL()
-    tick_BL = R.ruggeduinos[0].motorStatusBL()
-    tick_FR = R.ruggeduinos[0].motorStatusFR()
-    tick_BR = R.ruggeduinos[0].motorStatusBR()
-    currentFL += tick_FL
-    currentBL += tick_BL
-    currentFR += tick_FR
-    currentBR += tick_BR
-    average = (currentFL + currentBL + currentFR + currentBR)/4.0
-    if average >= 100:
-    	setMotor("FL", R.motors[1].m1.power*(average/currentFL))
-    	setMotor("BL", R.motors[1].m0.power*(average/currentBL))
-    	setMotor("FR", R.motors[0].m0.power*(average/currentFR))
-    	setMotor("BR", R.motors[0].m1.power*(average/currentBR))
-    	resetcurrent()
-    return int((tick_FL + tick_BL + tick_FR + tick_BR)/4)
-
-def drive_FR_BL(distance): #forward right & backward left
-	print "ToDo"
-	
-def drive_FL_BR(distance): #forward left & backward right
-	print "ToDo"
-
-def dist_to_ticks_diagonal(cm):
-	return cm*tpcm
-
-def dist_to_ticks_straight(cm):
-	return (cm/math.sqrt(2))*tpcm
-	
-def turn(degree): #turn
-    tickcount = 0
-    degreeticks = int(((abs(degree/360)*robotCircumfrence)/wheelCircumfrence)*3200)
-    if degree > 0:#+ = Counterclockwise
-        setAllMotor(1, 1, 1, 1)
-    else:#- = Clockwise
-        setAllMotor(-1, -1, -1, -1)
-    while degreeticks > tickcount:
-        tickcount += int((motorStatusFL()+motorStatusBL()+motorStatusFR()+motorStatusBR())/4)
+def moveArm(there):
+    if(there == 'up'):
+        R.servos[0][4] = -35
+    elif(there == 'down'):
+        R.servos[0][4] = -85
+    elif(there == 'middle'):
+        R.servos[0][4] = -60
+    else:
+        print 'You missspelled up/down/middle, by spelling' + str(there)
+#End Move Arms
+#Movement
+def drive_F_B(distance):#distance in meters
+    distance /= 2.0#every motor only has to drive half the total distance due to vectoradition
+    distance *= math.sqrt(2)#length of the vector every motor has to drive
+    tickdistance = int(abs((distance/wheelCircumfrence)*3200))#ticks every motor has to drive
+    tickcount = 0#amount of ticks alredy driven
+    if distance > 0:#forward
+        setAllMotor(-47, -47, 50, 50)
+        direction = 1
+    else:#backward
+        setAllMotor(47, 47, -50, -50)
+        direction = 0
+    print tickdistance
+    while tickdistance > tickcount:
+        tickcount += int((R.ruggeduinos[0].motorStatusFL()+R.ruggeduinos[0].motorStatusFR())/2)
     setAllMotor(0, 0, 0, 0)
 
+def drive_L_R(distance):
+    distance /= 2.0#every motor only has to drive half the total distance due to vectoradition
+    distance *= math.sqrt(2)#length of the vector every motor has to drive
+    tickdistance = int(abs((distance/wheelCircumfrence)*3200))#ticks every motor has to drive
+    tickcount = 0#amount of ticks alredy driven
+    if distance > 0:#right
+        setAllMotor(-47, 50, -47, 50)
+    	direction = 1
+    else:#left
+    	setAllMotor(47, -50, 47, -50)
+    	direction = 0
+    print tickdistance
+    while tickdistance > tickcount:
+        tickcount += int((R.ruggeduinos[0].motorStatusFL()+R.ruggeduinos[0].motorStatusBL())/2)
+    setAllMotor(0, 0, 0, 0)
+
+def turn(degree): #turn
+    tickcount = 0
+    if degree > 0:#+ = Counterclockwise
+        setAllMotor(40, 40, 40, 40)
+    else:#- = Clockwise
+    	setAllMotor(-40, -40, -40, -40)
+    degreeticks = int(((abs(degree/360.0)*robotCircumfrence)/wheelCircumfrence)*3200)
+    print 'test'
+    while degreeticks > tickcount:
+        print 'loop'
+    	tickcount += R.ruggeduinos[0].motorStatusFL()
+        print tickcount
+    setAllMotor(0, 0, 0, 0)
+#End Movement
 def search():
 	if (remainingTime <= abortSearchTime and (hasTokenF or hasTokenL or hasTokenB or hasTokenR)) or (hasTokenF and hasTokenL and hasTokenB and hasTokenR): #if (not enough time left and has at least one token) or (has already all tokens)
 		state = "calcPos"
@@ -257,6 +224,7 @@ def gotoToken(m):
 	turn(m.polar.x)
 	drive_F_B(m.dist)
 
+#Turn Token
 turnDict = {
 	'z0id32':0, 'z0id33':0, 'z0id34':5, 'z0id35':1, 'z0id36':4, 'z0id37':3, 'z0id38':0, 'z0id39':0, 'z0id40':5, 'z0id41':4, 'z0id42':1, 'z0id43':3, 'z0id44':0, 'z0id45':0, 'z0id46':5, 'z0id47':3, 'z0id48':1, 'z0id49':4,
 	'z1id32':1, 'z1id33':3, 'z1id34':3, 'z1id35':5, 'z1id36':1, 'z1id37':4, 'z1id38':2, 'z1id39':2, 'z1id40':4, 'z1id41':5, 'z1id42':3, 'z1id43':1, 'z1id44':3, 'z1id45':1, 'z1id46':1, 'z1id47':5, 'z1id48':4, 'z1id49':3,
@@ -265,33 +233,85 @@ turnDict = {
 	}
 
 def turnToken():
-	m = currentFrontToken
-	dictentry = 'z{0}id{1}'.format(R.zone, m.info.code)
-	orientat = 0
-	baseCase = turnDict[dictentry]
-	case = 0
-	
-	if m.orientation.rot_y < 5 or m.orientation.rot_y > 355:#Orientation F
-		orientat += 0
-	elif m.orientation.rot_y < 265 or m.orientation.rot_y > 275:#Orientation R
-		orientat += 1
-	elif m.orientation.rot_y < 85 or m.orientation.rot_y > 355:#Orientation L
-		orientat += 2
-	elif m.orientation.rot_y < 175 or m.orientation.rot_y < 185:#Orientation B
-		orientat += 3
-	
-	if baseCase == 0 or baseCase == 1 or baseCase == 2 or baseCase == 3:
-		case = (baseCase + orientat) % 4
-	elif baseCase == 4 or baseCase == 5:6
-		case = baseCase
-		
-	if case == 0:#A - R'/R3
-	elif case == 1:#C - U R
-	elif case == 2:#D - R
-	elif case == 3:#B - U' R
-	elif case == 4:#E - R2
-	elif case == 5:#F - /
+    m = currentFrontToken
+    dictentry = 'z{0}id{1}'.format(R.zone, m.info.code)
+    orientat = 0
+    baseCase = turnDict[dictentry]
+    case = 0
+    
+    if m.orientation.rot_y < 5 or m.orientation.rot_y > 355:#Orientation F
+    	orientat += 0
+    elif m.orientation.rot_y < 265 or m.orientation.rot_y > 275:#Orientation R
+    	orientat += 1
+    elif m.orientation.rot_y < 85 or m.orientation.rot_y > 355:#Orientation L
+    	orientat += 2
+    elif m.orientation.rot_y < 175 or m.orientation.rot_y < 185:#Orientation B
+    	orientat += 3
+    
+    if baseCase == 0 or baseCase == 1 or baseCase == 2 or baseCase == 3:
+    	case = (baseCase + orientat) % 4
+    elif baseCase == 4 or baseCase == 5:
+        case = baseCase
+    	
+    if case == 0:#A - R'/R3
+        turnTokenPart(3)
+    elif case == 1:#C - U R
+        regrab('U')
+        turnTokenPart(1)
+    elif case == 2:#D - R
+        turnTokenPart(1)
+    elif case == 3:#B - U' R
+        regrab('V')
+        turnTokenPart(1)
+    elif case == 4:#E - R2
+        turnTokenPart(2)
+    #elif case == 5:#F - /
 
+def turnTokenUp():#R #we are asuming that the robot is holding the token in question or standing right in front of it
+    grabSide('front', False)
+    time.sleep(0.5)
+    moveArm('down')
+    time.sleep(1)
+    grabSide('front', True)
+    time.sleep(1)
+    moveArm('up')
+    time.sleep(2)
+    grabSide('front', False)
+    time.sleep(0.5)
+    moveArm('middle')
+    time.sleep(1)
+    grabSide('front', True)
+    time.sleep(0.5)
+
+def turnTokenPart(steps):#in steps
+    if(steps == 1):
+        turnTokenUp()
+    elif(steps == 2):
+        turnTokenUp()
+        turnTokenUp()
+    elif(steps == 3):
+        turnTokenUp()
+        turnTokenUp()
+        turnTokenUp()
+    else:
+        print 'A your dumb, or B your finger sliped'
+
+def regrab(direction):#U = right, V = left
+    grabSide('front', False)
+    time.sleep(0.4)
+    drive_F_B(-0.3)
+    if direction == 'U':
+        drive_L_R(-0.45)
+        turn(90)
+        drive_L_R(-0.425)
+        drive_F_B(0.45)
+    else:
+        drive_L_R(0.45)
+        turn(-90)
+        drive_L_R(0.425)
+        drive_F_B(-0.45)
+    
+#End Turn Token
 
 def rps(m):#@Parameter ArenaMarker @return (x,y,rot)
 	distToWall = m.world.z
@@ -360,54 +380,12 @@ class SensorThread (threading.Thread):
 		self.counter = counter
 	def run(self):
 		while True:
-			errorTokenF = readUSF() >= 10 and hasTokenF
-			errorTokenL = readUSL() >= 10 and hasTokenL
-			errorTokenB = readUSB() >= 10 and hasTokenB
-			errorTokenR = readUSR() >= 10 and hasTokenR
+			errorTokenF = R.ruggeduinos[0].readUSF() >= 10 and hasTokenF
+			errorTokenL = R.ruggeduinos[0].readUSL() >= 10 and hasTokenL
+			errorTokenB = R.ruggeduinos[0].readUSB() >= 10 and hasTokenB
+			errorTokenR = R.ruggeduinos[0].readUSR() >= 10 and hasTokenR
 			errorToken = errorTokenF or errorTokenL or errorTokenB or errorTokenR
 #End Classes
 #Main Method
-    #Thread start
-timeT = TimeThread(1, "time", 1)
-timeT.start()
-sensorsT = SensorThread(2, "sensors", 2)
-sensorsT.start()
-	#End Thread start
-crossStateInfo = None
-while True:
-	if state == "start":
-		state = "searching"
-	
-	elif state == "searching":
-		search()
-		
-	elif state == "gotoToken":
-		gotoToken(crossStateInfo)
-		print "ToDo"
-	
-	elif state == "pickupToken":
-		print "ToDo"
-	
-	elif state == "calcPos":
-		print "ToDo"
-		state = "gotoCorner"
-	
-	elif state == "gotoCorner":
-		print "ToDo"
-		state = "turnToken"
-	
-	elif state == "turnToken":
-		turnToken()
-	
-	elif state == "putdownToken":
-		print "ToDo"
-	
-	elif state == "switchToken":
-		print "ToDo"
-	
-	elif state == "stop":
-		print "ToDo"
-	
-	else:
-		print "You broke it! L3rn 70 wr1t3 y0u f4g!"
-#End Main Method
+print 'Hello, world'
+drive_L_R(2)
