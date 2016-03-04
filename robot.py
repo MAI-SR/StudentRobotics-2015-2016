@@ -1,5 +1,5 @@
 #########################################################################################################################################
-#Disclaimer:        																													#
+#Disclaimer:            																												#
 #---------------------------------------------------------------------------------------------------------------------------------------#
 #You can use this code for any and all educational purposes.																			#
 #If you want to use it for the Student Robotics Contest you will have to send us an email and link our GitHub repository in your code.	#
@@ -150,52 +150,78 @@ def moveArm(there):
 #End Move Arms
 #Movement
 def drive_F_B(distance):#distance in meters
+    print 'drive'
+    print distance
     distance /= 2.0#every motor only has to drive half the total distance due to vectoradition
     distance *= math.sqrt(2)#length of the vector every motor has to drive
     tickdistance = int(abs((distance/wheelCircumfrence)*3200))#ticks every motor has to drive
     tickcount = 0#amount of ticks alredy driven
-    if distance > 0:#forward
+    if distance > 0 and tickdistance > 9600:#forward
+        setAllMotor(-23, -23, 25, 25)
+        time.sleep(0.5)
         setAllMotor(-47, -47, 50, 50)
-        direction = 1
-    else:#backward
+    elif distance > 0:
+        setAllMotor(-23, -23, 25, 25)
+    elif distance <= 0 and tickdistance > 9600:#backward
+        setAllMotor(23, 23, -25, -25)
+        time.sleep(0.5)
         setAllMotor(47, 47, -50, -50)
-        direction = 0
+    else:
+        setAllMotor(23, 23, -25, -25)
     print tickdistance
     while tickdistance > tickcount:
-        tickcount += int((R.ruggeduinos[0].motorStatusFL()+R.ruggeduinos[0].motorStatusFR())/2)
+		tickcount += int((R.ruggeduinos[0].motorStatusFL()+R.ruggeduinos[0].motorStatusFR())/2)
+		if tickdistance - tickcount < 3200:
+			if distance > 0:
+				setAllMotor(-23, -23, 25, 25)
+			else:
+				setAllMotor(23, 23, -25, -25)
     setAllMotor(0, 0, 0, 0)
 
 def drive_L_R(distance):
-    distance /= 2.0#every motor only has to drive half the total distance due to vectoradition
+    distance /= -2.0#every motor only has to drive half the total distance due to vectoradition
     distance *= math.sqrt(2)#length of the vector every motor has to drive
     tickdistance = int(abs((distance/wheelCircumfrence)*3200))#ticks every motor has to drive
     tickcount = 0#amount of ticks alredy driven
-    if distance > 0:#right
+    if distance > 0 and tickdistance > 9600:#left
+        setAllMotor(-23, 25, -23, 25)
+        time.sleep(0.5)
         setAllMotor(-47, 50, -47, 50)
-    	direction = 1
-    else:#left
+    elif distance > 0:
+    	setAllMotor(-23, 25, -23, 25)
+    elif distance <= 0 and tickdistance > 9600:#right
+    	setAllMotor(23, -25, 23, -25)
+    	time.sleep(0.5)
     	setAllMotor(47, -50, 47, -50)
-    	direction = 0
+    else:
+    	setAllMotor(23, -25, 23, -25)
     print tickdistance
     while tickdistance > tickcount:
-        tickcount += int((R.ruggeduinos[0].motorStatusFL()+R.ruggeduinos[0].motorStatusBL())/2)
+    	tickcount += int((R.ruggeduinos[0].motorStatusFL()+R.ruggeduinos[0].motorStatusBL())/2)
+    	if tickdistance - tickcount < 3200:
+    		if distance > 0:
+    			setAllMotor(-23, 25, -23, 25)
+    		else:
+    			setAllMotor(23, -25, 23, -25)
     setAllMotor(0, 0, 0, 0)
 
-def turn(degree): #turn
+def turn(degree): #turn#
+    print 'turn'
+    print degree
     tickcount = 0
     if degree > 0:#+ = Counterclockwise
-        setAllMotor(40, 40, 40, 40)
+        setAllMotor(25, 25, 25, 25)
     else:#- = Clockwise
-    	setAllMotor(-40, -40, -40, -40)
+    	setAllMotor(-25, -25, -25, -25)
     degreeticks = int(((abs(degree/360.0)*robotCircumfrence)/wheelCircumfrence)*3200)
     print 'test'
     while degreeticks > tickcount:
-        print 'loop'
     	tickcount += R.ruggeduinos[0].motorStatusFL()
-        print tickcount
     setAllMotor(0, 0, 0, 0)
 #End Movement
-def search():
+
+
+def search(direction):#plz only use a 1 or a -1 here a 0 is just dumb and something other than 1 or -1 is just as dumb
 	if (remainingTime <= abortSearchTime and (hasTokenF or hasTokenL or hasTokenB or hasTokenR)) or (hasTokenF and hasTokenL and hasTokenB and hasTokenR): #if (not enough time left and has at least one token) or (has already all tokens)
 		state = "calcPos"
 		crossStateInfo = None
@@ -206,9 +232,9 @@ def search():
 		found = False
 		markers = R.see()
 		if len(markers) == 0:
-			turn(15)
+			turn(15*direction)
 		else:
-			markers = markers.sort()
+			markers = sortForDist(markers)
 			for m in markers:
 				if m.info.marker_type == MARKER_TOKEN_TOP or m.info.marker_type == MARKER_TOKEN_SIDE or m.info.marker_type == MARKER_TOKEN_BOTTOM:
 					found = True
@@ -218,7 +244,7 @@ def search():
 			state = "gotoToken"
 			return
 		else:
-			turn(15)
+			turn(15*direction)
 
 def gotoToken(m):
 	turn(m.polar.x)
@@ -314,10 +340,10 @@ def regrab(direction):#U = right, V = left
 #End Turn Token
 
 def rps(m):#@Parameter ArenaMarker @return (x,y,rot)
-	distToWall = m.world.z
-	distToLeftWall = ((m.info.code % 7) + 1) + m.world.x
-	relrot = m.orientation.rot_z
-	
+	distToWall = m.centre.world.z
+	distToLeftWall = ((m.info.code % 7) + 1) + m.centre.world.x
+	relrot = m.orientation.rot_y
+    
 	if m.info.code >= 0 and m.info.code <= 6:
 		if R.zone == 0:
 			return (distToWall, distToLeftWall, 180 + relrot)
@@ -354,7 +380,59 @@ def rps(m):#@Parameter ArenaMarker @return (x,y,rot)
 			return (distToLeftWall, 8-distToWall, 90 + relrot)
 		if R.zone == 3:
 			return (distToWall, distToLeftWall, 180 + relrot)
-	
+            
+def returnToZone(m):
+    if R.zone >= 4:
+		print('You what mate? ' + 'Your Zone ' + str(R.zone) + 'should not exist! U br0k3 the v1s10nsys, f4gt!')
+		return
+		
+    rpsInfo = rps(m)
+    print rpsInfo
+    turn(rpsInfo[2] -(90-(math.pi/360)*math.atan(rpsInfo[1]/rpsInfo[0])))
+    drive_F_B(math.sqrt(rpsInfo[0]**2 + rpsInfo[1]**2) - float(0.26))
+    
+def gotoCorner():
+    global crossStateInfo
+    while searchWall(1):
+        print 1+1
+    returnToZone(crossStateInfo)
+    
+    
+def searchWall(direction):#plz only use a 1 or a -1 here a 0 is just dumb and something other than 1 or -1 is just as dumm
+    global crossStateInfo
+    counter = 0
+    found = False
+    while counter < 24 or not found:
+        found = False
+        markers = R.see()
+    	if len(markers) == 0:
+    		turn(15*direction)
+        else:
+			#markers = markers.sort()
+            for m in markers:
+                print m
+                if m.info.marker_type == MARKER_ARENA:
+                    found = True
+                    crossStateInfo = m
+                    print 'found'
+                    break				
+        if found:
+            state = "turnToken"
+            return False
+        else:
+            turn(15*direction)
+            return True
+
+def sortForDist(markerArr):
+    newArr = []
+    while len(markerArr) > 0:
+        lowest = markerArr[0]
+        for m in markerArr:
+            if m.dist < lowest.dist:
+                lowest = m
+        markerArr.remove(lowest)
+        newArr.append(lowest)
+    return newArr
 		
 #End Methods
 #Classes
@@ -372,20 +450,50 @@ class TimeThread (threading.Thread):
 		endTime = time.time() + 180
 		while True:
 			remainingTime = endTime - time.time()
-class SensorThread (threading.Thread):
-	def __init__(self, threadID, name, counter):
-		threading.Thread.__init__(self)
-		self.threadID = threadID
-		self.name = name
-		self.counter = counter
-	def run(self):
-		while True:
-			errorTokenF = R.ruggeduinos[0].readUSF() >= 10 and hasTokenF
-			errorTokenL = R.ruggeduinos[0].readUSL() >= 10 and hasTokenL
-			errorTokenB = R.ruggeduinos[0].readUSB() >= 10 and hasTokenB
-			errorTokenR = R.ruggeduinos[0].readUSR() >= 10 and hasTokenR
-			errorToken = errorTokenF or errorTokenL or errorTokenB or errorTokenR
+
+
 #End Classes
 #Main Method
+crossStateInfo = None
+def main():
+    global state
+    while True:
+        if state == "start":
+            state = "searching"
+        elif state == "searching":
+            search(1)
+        elif state == "gotoToken":
+            gotoToken(crossStateInfo)
+            print "ToDo"
+        elif state == "pickupToken":
+            print "ToDo"
+        elif state == "calcPos":
+            print "ToDo"
+            state = "gotoCorner"
+        elif state == "gotoCorner":
+            print "ToDo"
+            state = "turnToken"
+        elif state == "turnToken":
+            turnToken()
+        elif state == "putdownToken":
+            print "ToDo"
+        elif state == "switchToken":
+            print "ToDo"
+        elif state == "stop":
+            print "ToDo"
+        else:
+            print "You broke it! L3rn 70 wr1t3 y0u f4g!"
+#End Main Method
 print 'Hello, world'
-drive_L_R(2)
+#drive_F_B(2)
+#drive_F_B(-2)
+#drive_F_B(0.75)
+#drive_F_B(-0.75)
+#drive_L_R(2)
+#drive_L_R(-2)
+#drive_L_R(0.75)
+#drive_L_R(-0.75)
+#
+#turn(90)
+#turn(-90)
+gotoCorner()
