@@ -208,6 +208,8 @@ def drive_L_R(distance):
 def turn(degree): #turn#
     print 'turn'
     print degree
+	while degree > 180:
+		degree -= 360
     tickcount = 0
     if degree > 0:#+ = Counterclockwise
         setAllMotor(25, 25, 25, 25)
@@ -388,8 +390,8 @@ def returnToZone(m):
 		
     rpsInfo = rps(m)
     print rpsInfo
-    turn(rpsInfo[2] -(90-(math.pi/360)*math.atan(rpsInfo[1]/rpsInfo[0])))
-    drive_F_B(math.sqrt(rpsInfo[0]**2 + rpsInfo[1]**2) - float(0.26))
+    turn(-(rpsInfo[2] + 90+(math.pi/180)*math.atan(rpsInfo[0]/rpsInfo[1])))#to0deg - (90 + arctan(x/y))
+    drive_F_B(math.sqrt(rpsInfo[0]**2 + rpsInfo[1]**2) - float(0.5))
     
 def gotoCorner():
     global crossStateInfo
