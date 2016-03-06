@@ -1,5 +1,5 @@
 #########################################################################################################################################
-#Disclaimer:            																												#
+#Disclaimer:                																											#
 #---------------------------------------------------------------------------------------------------------------------------------------#
 #You can use this code for any and all educational purposes.																			#
 #If you want to use it for the Student Robotics Contest you will have to send us an email and link our GitHub repository in your code.	#
@@ -72,24 +72,15 @@ robotCircumfrence = 1.0838#.....
 abortSearchTime = 100 #if searching and not enough time is left
 remainingTime = 180
 #End Constants
-#Threads API
-	#error
-errorToken = False #lost a token?
-errorTokenF = False #lost the token?
-errorTokenL = False #lost the token?
-errorTokenB = False #lost the token?
-errorTokenR = False #lost the token?
-	#SensorThread
+#Variables
 hasTokenF = False #should there be a Token?
 hasTokenL = False #should there be a Token?
 hasTokenB = False #should there be a Token?
-hasTokenR = False #should there be a Token?
-	#TimeThread
-#End Threads API
-#Variables
-state = "start"
-currentFrontToken = None
+hasTokenR = False #should there be a Token
 
+state = "start"
+
+currentFrontToken = None
 #End Variables 
 #Methods
 
@@ -208,8 +199,8 @@ def drive_L_R(distance):
 def turn(degree): #turn#
     print 'turn'
     print degree
-	while degree > 180:
-		degree -= 360
+    while degree > 180:
+        degree -= 360
     tickcount = 0
     if degree > 0:#+ = Counterclockwise
         setAllMotor(25, 25, 25, 25)
@@ -391,7 +382,7 @@ def returnToZone(m):
     rpsInfo = rps(m)
     print rpsInfo
     turn(-(rpsInfo[2] + 90+(math.pi/180)*math.atan(rpsInfo[0]/rpsInfo[1])))#to0deg - (90 + arctan(x/y))
-    drive_F_B(math.sqrt(rpsInfo[0]**2 + rpsInfo[1]**2) - float(0.5))
+    drive_F_B(math.sqrt(rpsInfo[0]**2 + rpsInfo[1]**2) - 0.5)
     
 def gotoCorner():
     global crossStateInfo
@@ -435,13 +426,39 @@ def sortForDist(markerArr):
         markerArr.remove(lowest)
         newArr.append(lowest)
     return newArr
-		
+
+def switchToken():
+    if hasTokenF:
+        grabSide('front',False)
+        hasTokenF = False
+        drive_F_B(-0.3)
+    if hasTokenL:
+        turn(-90)
+        grabSide('left', False)
+        drive_L_R(-0.3)
+        turn(90)
+        drive_F_B(0.3)
+        hasTokenL = True
+        grabSide('front', True)
+    elif hasTokenR:
+        turn(90)
+        grabSide('left', False)
+        drive_L_R(0.3)
+        turn(-90)
+        drive_F_B(0.3)
+        hasTokenR = True
+        grabSide('front', True)
+    elif hasTokenB:
+        turn(180)
+        grabSide('left', False)
+        drive_F_B(-0.3)
+        turn(180)
+        drive_F_B(0.3)
+        hasTokenB = True
+        grabSide('front', True)
+    
 #End Methods
 #Classes
-class ArenaPoint(): #Class ArenaPoint used for calculating the robots place in the arena
-	def __init__(self, x, y, rot, dist):
-		self.x = x #x value of a point inside the arena
-		self.y = y #y value of a point inside the arena
 class TimeThread (threading.Thread):
 	def __init__(self, threadID, name, counter):
 		threading.Thread.__init__(self)
@@ -469,20 +486,17 @@ def main():
             print "ToDo"
         elif state == "pickupToken":
             print "ToDo"
-        elif state == "calcPos":
-            print "ToDo"
-            state = "gotoCorner"
         elif state == "gotoCorner":
-            print "ToDo"
+            gotoCorner()
             state = "turnToken"
         elif state == "turnToken":
             turnToken()
         elif state == "putdownToken":
             print "ToDo"
         elif state == "switchToken":
-            print "ToDo"
+            switchToken()
         elif state == "stop":
-            print "ToDo"
+            print "We have taken over the world!"
         else:
             print "You broke it! L3rn 70 wr1t3 y0u f4g!"
 #End Main Method
