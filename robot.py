@@ -201,6 +201,8 @@ def turn(degree): #turn#
     print degree
     while degree > 180:
         degree -= 360
+	while degree < -180:
+		degree += 360
     tickcount = 0
     if degree > 0:#+ = Counterclockwise
         setAllMotor(25, 25, 25, 25)
@@ -215,6 +217,7 @@ def turn(degree): #turn#
 
 
 def search(direction):#plz only use a 1 or a -1 here a 0 is just dumb and something other than 1 or -1 is just as dumb
+	global crossStateInfo
 	if (remainingTime <= abortSearchTime and (hasTokenF or hasTokenL or hasTokenB or hasTokenR)) or (hasTokenF and hasTokenL and hasTokenB and hasTokenR): #if (not enough time left and has at least one token) or (has already all tokens)
 		state = "calcPos"
 		crossStateInfo = None
@@ -333,8 +336,8 @@ def regrab(direction):#U = right, V = left
 #End Turn Token
 
 def rps(m):#@Parameter ArenaMarker @return (x,y,rot)
-	distToWall = m.centre.world.z
-	distToLeftWall = ((m.info.code % 7) + 1) + m.centre.world.x
+	distToWall = math.cos((math.pi/180) * m.orientation.rot_y) * m.dist
+	distToLeftWall = ((m.info.code % 7) + 1) + math.sin((math.pi/180) * m.orientation.rot_y) * m.dist 
 	relrot = m.orientation.rot_y
     
 	if m.info.code >= 0 and m.info.code <= 6:
@@ -375,14 +378,16 @@ def rps(m):#@Parameter ArenaMarker @return (x,y,rot)
 			return (distToWall, distToLeftWall, 180 + relrot)
             
 def returnToZone(m):
-    if R.zone >= 4:
+	if R.zone >= 4:
 		print('You what mate? ' + 'Your Zone ' + str(R.zone) + 'should not exist! U br0k3 the v1s10nsys, f4gt!')
 		return
 		
-    rpsInfo = rps(m)
-    print rpsInfo
-    turn(-(rpsInfo[2] + 90+(math.pi/180)*math.atan(rpsInfo[0]/rpsInfo[1])))#to0deg - (90 + arctan(x/y))
-    drive_F_B(math.sqrt(rpsInfo[0]**2 + rpsInfo[1]**2) - 0.5)
+	rpsInfo = rps(m)
+	print rpsInfo
+	turn(-rpsInfo[2])
+	time.sleep(0.5)
+	turn(-(90+(180/math.pi)*math.atan(rpsInfo[0]/rpsInfo[1])))#to0deg - (90 + arctan(x/y))
+	drive_F_B(math.sqrt(rpsInfo[0]**2 + rpsInfo[1]**2) - 0.5)
     
 def gotoCorner():
     global crossStateInfo
@@ -512,4 +517,9 @@ print 'Hello, world'
 #
 #turn(90)
 #turn(-90)
+R.zone = 1
 gotoCorner()
+#while True:
+#	m = R.see()
+#	for marker in m:
+#		print marker.centre
