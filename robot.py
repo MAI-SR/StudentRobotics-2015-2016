@@ -130,13 +130,13 @@ def grabSide(side, state):#true == zu
         if(state):
             R.servos[0][7] = -40
         else:
-            R.servos[0][7] = 60
+            R.servos[0][7] = 80
     else:
         print 'You missspelled back/left/right/front, by spelling' + str(state)
 
 def moveArm(there):
     if(there == 'up'):
-        R.servos[0][4] = -35
+        R.servos[0][4] = -15
     elif(there == 'down'):
         R.servos[0][4] = -85
     elif(there == 'middle'):
@@ -317,20 +317,22 @@ def turnToken():
     #elif case == 5:#F - /
 
 def turnTokenUp():#R #we are asuming that the robot is holding the token in question or standing right in front of it
-    grabSide('front', False)
-    time.sleep(0.5)
-    moveArm('down')
-    time.sleep(1)
-    grabSide('front', True)
-    time.sleep(1)
-    moveArm('up')
-    time.sleep(2)
-    grabSide('front', False)
-    time.sleep(0.5)
-    moveArm('middle')
-    time.sleep(1)
-    grabSide('front', True)
-    time.sleep(0.5)
+	grabSide('front', False)
+	time.sleep(0.5)
+	moveArm('down')
+	time.sleep(1)
+	grabSide('front', True)
+	time.sleep(1)
+	moveArm('up')
+	time.sleep(2)
+	grabSide('front', False)
+	time.sleep(0.5)
+	turn(1.5)
+	time.sleep(0.2)
+	moveArm('middle')
+	time.sleep(1)
+	grabSide('front', True)
+	time.sleep(0.5)
 
 def turnTokenPart(steps):#in steps
     if(steps == 1):
@@ -526,7 +528,7 @@ def main():
             state = "turnToken"
         elif state == "turnToken":
 			scanGrabbedToken()
-            turnToken()
+			turnToken()
         elif state == "putdownToken":
             print "ToDo"
         elif state == "switchToken":
@@ -548,9 +550,21 @@ print 'Hello, world'
 #
 #turn(90)
 #turn(-90)
-R.zone = 1
-gotoCorner()
+
+#R.zone = 1
+#gotoCorner()
+
 #while True:
 #	m = R.see()
 #	for marker in m:
 #		print marker.centre
+
+grabSide('front', False)
+time.sleep(1)
+moveArm('middle')
+time.sleep(1)
+grabSide('front', True)
+time.sleep(1)
+turnTokenPart(1)
+#scanGrabbedToken()
+#turnToken()
