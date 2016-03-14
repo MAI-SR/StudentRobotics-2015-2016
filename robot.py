@@ -80,6 +80,7 @@ hasTokenR = False #should there be a Token
 
 state = "start"
 
+currfirstToken = 'FrontLeft'
 currentFrontToken = None
 #End Variables 
 #Methods
@@ -130,13 +131,13 @@ def grabSide(side, state):#true == zu
         if(state):
             R.servos[0][7] = -40
         else:
-            R.servos[0][7] = 60
+            R.servos[0][7] = 80
     else:
         print 'You missspelled back/left/right/front, by spelling' + str(state)
 
 def moveArm(there):
     if(there == 'up'):
-        R.servos[0][4] = -35
+        R.servos[0][4] = -15
     elif(there == 'down'):
         R.servos[0][4] = -85
     elif(there == 'middle'):
@@ -246,6 +247,67 @@ def search(direction):#plz only use a 1 or a -1 here a 0 is just dumb and someth
 			return
 		else:
 			turn(15*direction)
+			
+def firstToken():
+	global currfirstToken
+	print 'firstToken'
+	#currfirstToken = None #put in 'FrontRight' , 'FrontLeft' , 'BackRight' or 'Mid'
+	foundFirstToken = False
+	dist = None
+	degree = None
+
+	if currfirstToken == 'FrontRight':
+		print 'R'
+		search(1)
+		return
+	if currfirstToken == 'FrontLeft':
+		print 'L'
+		turn(15)
+		while not foundFirstToken:
+			print 'loop'
+			markers = R.see()
+			if len(markers) >= 1:
+				print '>=1'
+				for m in markers:
+					if m.dist >= float(4.50) or m.dist <= float(5.50):
+						print 'indist'
+						dist = m.dist
+						degree = m.centre.polar.rot_x
+						foundFirstToken = True
+						break
+			else:
+				search(1)
+				return
+	if currfirstToken == 'BackRight':
+		print 'B'
+		turn(-15)
+		while not foundFirstToken:
+			markers = R.see()
+			if len(markers) >= 1:
+				for m in markers:
+					if m.dist >= float(4.50) or m.dist <= float(5.50):
+						dist = m.dist
+						degree = m.centre.polar.rot_x
+						foundFirstToken = True
+						break
+			else:
+				search(1)
+				return
+	if currfirstToken == 'Mid':
+		print 'M'
+		print ToDo
+	if currfirstToken == None:
+		print 'Nope'
+		search(1)
+		return
+	if foundFirstToken:
+		print 'blah'
+		turn(-degree)
+		time.sleep(0.5)
+		drive_F_B(dist)
+		state == 'put in needed State'
+		return
+
 
 def gotoToken():
 	m = crossStateInfo
@@ -317,20 +379,22 @@ def turnToken():
     #elif case == 5:#F - /
 
 def turnTokenUp():#R #we are asuming that the robot is holding the token in question or standing right in front of it
-    grabSide('front', False)
-    time.sleep(0.5)
-    moveArm('down')
-    time.sleep(1)
-    grabSide('front', True)
-    time.sleep(1)
-    moveArm('up')
-    time.sleep(2)
-    grabSide('front', False)
-    time.sleep(0.5)
-    moveArm('middle')
-    time.sleep(1)
-    grabSide('front', True)
-    time.sleep(0.5)
+	grabSide('front', False)
+	time.sleep(0.5)
+	moveArm('down')
+	time.sleep(1)
+	grabSide('front', True)
+	time.sleep(1)
+	moveArm('up')
+	time.sleep(2)
+	grabSide('front', False)
+	time.sleep(0.5)
+	turn(1.5)
+	time.sleep(0.2)
+	moveArm('middle')
+	time.sleep(1)
+	grabSide('front', True)
+	time.sleep(0.5)
 
 def turnTokenPart(steps):#in steps
     if(steps == 1):
@@ -526,7 +590,7 @@ def main():
             state = "turnToken"
         elif state == "turnToken":
 			scanGrabbedToken()
-            turnToken()
+			turnToken()
         elif state == "putdownToken":
             print "ToDo"
         elif state == "switchToken":
@@ -548,9 +612,24 @@ print 'Hello, world'
 #
 #turn(90)
 #turn(-90)
-R.zone = 1
-gotoCorner()
+
+#R.zone = 1
+#gotoCorner()
+
 #while True:
 #	m = R.see()
 #	for marker in m:
 #		print marker.centre
+
+firstToken()
+
+#grabSide('front', False)
+#time.sleep(1)
+#moveArm('middle')
+#time.sleep(1)
+#grabSide('front', True)
+#time.sleep(1)
+#turnTokenPart(1)
+
+#scanGrabbedToken()
+#turnToken()
