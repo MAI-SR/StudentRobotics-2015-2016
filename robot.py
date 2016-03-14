@@ -101,6 +101,11 @@ def setAllMotor(fl, bl, fr, br): #set all motors
     setMotor("BR", br)
     setMotor("BL", bl)
 
+def setCam(pos):
+	if pos == 'up':
+		R.servos[0][3] = 50
+	elif pos == 'down':
+		R.servos[0][3] = 10
 #End Setter
 #Getter
 #End Getter
@@ -201,6 +206,8 @@ def turn(degree): #turn#
     print degree
     while degree > 180:
         degree -= 360
+	while degree < -180:
+		degree += 360
     tickcount = 0
     if degree > 0:#+ = Counterclockwise
         setAllMotor(25, 25, 25, 25)
@@ -215,6 +222,7 @@ def turn(degree): #turn#
 
 
 def search(direction):#plz only use a 1 or a -1 here a 0 is just dumb and something other than 1 or -1 is just as dumb
+	global crossStateInfo
 	if (remainingTime <= abortSearchTime and (hasTokenF or hasTokenL or hasTokenB or hasTokenR)) or (hasTokenF and hasTokenL and hasTokenB and hasTokenR): #if (not enough time left and has at least one token) or (has already all tokens)
 		state = "calcPos"
 		crossStateInfo = None
@@ -239,10 +247,25 @@ def search(direction):#plz only use a 1 or a -1 here a 0 is just dumb and someth
 		else:
 			turn(15*direction)
 
-def gotoToken(m):
-	turn(m.polar.x)
-	drive_F_B(m.dist)
+def gotoToken():
+	m = crossStateInfo
+	alpha = m.orientation.rot_y
+	alphaRad = math.radians(alpha)
+	hyp = m.dist
+	ggkath = math.sin(alphaRad) * hyp
+	ankath = math.sin(alphaRad) * hyp
+	turn(-alpha)#might be an issue/+alpha
+	if alpha > 0:
+		drive_L_R(ggkath)
+	else:
+		drive_L_R(-ggkath)
+	drive_F_B(ankath-0.3)#uncut :P
 
+def grabToken():
+	grabSide('front', False)
+	moveArm('middle')
+	time.sleep(1)
+	drive_F_B(0.25)
 #Turn Token
 turnDict = {
 	'z0id32':0, 'z0id33':0, 'z0id34':5, 'z0id35':1, 'z0id36':4, 'z0id37':3, 'z0id38':0, 'z0id39':0, 'z0id40':5, 'z0id41':4, 'z0id42':1, 'z0id43':3, 'z0id44':0, 'z0id45':0, 'z0id46':5, 'z0id47':3, 'z0id48':1, 'z0id49':4,
@@ -250,6 +273,13 @@ turnDict = {
 	'z2id32':2, 'z2id33':2, 'z2id34':4, 'z2id35':3, 'z2id36':5, 'z2id37':1, 'z2id38':1, 'z2id39':3, 'z2id40':3, 'z2id41':1, 'z2id42':5, 'z2id43':4, 'z2id44':1, 'z2id45':3, 'z2id46':3, 'z2id47':4, 'z2id48':5, 'z2id49':1,
 	'z3id32':3, 'z3id33':1, 'z3id34':1, 'z3id35':4, 'z3id36':3, 'z3id37':5, 'z3id38':3, 'z3id39':1, 'z3id40':1, 'z3id41':3, 'z3id42':4, 'z3id43':5, 'z3id44':2, 'z3id45':2, 'z3id46':4, 'z3id47':1, 'z3id48':3, 'z3id49':5
 	}
+	
+def scanGrabbedToken():
+	setCam('down')
+	markers = R.see()
+	markers = sortForDist(markers)
+	crossStateInfo = markers[0]
+	setCam('up')
 
 def turnToken():
     m = currentFrontToken
@@ -333,8 +363,8 @@ def regrab(direction):#U = right, V = left
 #End Turn Token
 
 def rps(m):#@Parameter ArenaMarker @return (x,y,rot)
-	distToWall = m.centre.world.z
-	distToLeftWall = ((m.info.code % 7) + 1) + m.centre.world.x
+	distToWall = math.cos((math.pi/180) * m.orientation.rot_y) * m.dist
+	distToLeftWall = ((m.info.code % 7) + 1) + math.sin((math.pi/180) * m.orientation.rot_y) * m.dist 
 	relrot = m.orientation.rot_y
     
 	if m.info.code >= 0 and m.info.code <= 6:
@@ -375,19 +405,22 @@ def rps(m):#@Parameter ArenaMarker @return (x,y,rot)
 			return (distToWall, distToLeftWall, 180 + relrot)
             
 def returnToZone(m):
-    if R.zone >= 4:
+	if R.zone >= 4:
 		print('You what mate? ' + 'Your Zone ' + str(R.zone) + 'should not exist! U br0k3 the v1s10nsys, f4gt!')
 		return
 		
-    rpsInfo = rps(m)
-    print rpsInfo
-    turn(-(rpsInfo[2] + 90+(math.pi/180)*math.atan(rpsInfo[0]/rpsInfo[1])))#to0deg - (90 + arctan(x/y))
-    drive_F_B(math.sqrt(rpsInfo[0]**2 + rpsInfo[1]**2) - 0.5)
+	rpsInfo = rps(m)
+	print rpsInfo
+	turn(-rpsInfo[2])
+	time.sleep(0.5)
+	turn(-(90+(180/math.pi)*math.atan(rpsInfo[0]/rpsInfo[1])))#to0deg - (90 + arctan(x/y))
+	drive_F_B(math.sqrt(rpsInfo[0]**2 + rpsInfo[1]**2) - 0.5)
     
 def gotoCorner():
     global crossStateInfo
-    while searchWall(1):
-        print 1+1
+    while True:
+        if not searchWall(1):
+			break
     returnToZone(crossStateInfo)
     
     
@@ -410,7 +443,6 @@ def searchWall(direction):#plz only use a 1 or a -1 here a 0 is just dumb and so
                     print 'found'
                     break				
         if found:
-            state = "turnToken"
             return False
         else:
             turn(15*direction)
@@ -482,14 +514,18 @@ def main():
         elif state == "searching":
             search(1)
         elif state == "gotoToken":
-            gotoToken(crossStateInfo)
-            print "ToDo"
+            gotoToken()
         elif state == "pickupToken":
-            print "ToDo"
+			grabToken()
+			if hasTokenB or hasTokenF or hasTokenL or hasTokenR:
+				state = "gotoCorner"
+			else:
+				state = "searching"
         elif state == "gotoCorner":
             gotoCorner()
             state = "turnToken"
         elif state == "turnToken":
+			scanGrabbedToken()
             turnToken()
         elif state == "putdownToken":
             print "ToDo"
@@ -512,4 +548,9 @@ print 'Hello, world'
 #
 #turn(90)
 #turn(-90)
+R.zone = 1
 gotoCorner()
+#while True:
+#	m = R.see()
+#	for marker in m:
+#		print marker.centre
