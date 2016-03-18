@@ -1,5 +1,5 @@
 #########################################################################################################################################
-#Disclaimer:                																											#
+#Disclaimer:                        																									#
 #---------------------------------------------------------------------------------------------------------------------------------------#
 #You can use this code for any and all educational purposes.																			#
 #If you want to use it for the Student Robotics Contest you will have to send us an email and link our GitHub repository in your code.	#
@@ -77,10 +77,13 @@ hasTokenF = False #should there be a Token?
 hasTokenL = False #should there be a Token?
 hasTokenB = False #should there be a Token?
 hasTokenR = False #should there be a Token
+gotFirstToken = False #used to define if state "searching" should execute firstToken() or search(direction)
 
 state = "start"
 
-currfirstToken = 'FrontLeft'
+wayToDriveAtToken = 1 #used for gotoToken()
+currfirstToken = 'M' #used to define the first Token to drive at
+takingMidToken = False #needed in firstToken()
 currentFrontToken = None
 #End Variables 
 #Methods
@@ -111,7 +114,7 @@ def setCam(pos):
 #Getter
 #End Getter
 #Move Arms
-def grabSide(side, state):#true == zu
+def grabSide(side, state):#true == zu false == auf
     if(side == 'right'):
         if(state):
             R.servos[0][1] = -10
@@ -249,43 +252,44 @@ def search(direction):#plz only use a 1 or a -1 here a 0 is just dumb and someth
 			turn(15*direction)
 			
 def firstToken():
-	global currfirstToken
+	global currfirstToken , takingMidToken, gotFirstToken
 	print 'firstToken'
-	#currfirstToken = None #put in 'FrontRight' , 'FrontLeft' , 'BackRight' or 'Mid'
+	#currfirstToken = None #put in 'FR' , 'FL' , 'BR' or 'M'
 	foundFirstToken = False
+	atMidToken = False
 	dist = None
 	degree = None
 
-	if currfirstToken == 'FrontRight':
-		print 'R'
+	if currfirstToken == 'FR':
+		print 'FR'
 		search(1)
 		return
-	if currfirstToken == 'FrontLeft':
-		print 'L'
+	if currfirstToken == 'FL':
+		print 'FL'
 		turn(15)
 		while not foundFirstToken:
-			print 'loop'
 			markers = R.see()
+			print 'looking for token'
 			if len(markers) >= 1:
-				print '>=1'
 				for m in markers:
-					if m.dist >= float(4.50) or m.dist <= float(5.50):
+					if m.dist >= 4.50 or m.dist <= 5.50:
 						print 'indist'
 						dist = m.dist
 						degree = m.centre.polar.rot_x
 						foundFirstToken = True
 						break
 			else:
-				search(1)
+				search(-1)
 				return
-	if currfirstToken == 'BackRight':
-		print 'B'
+	if currfirstToken == 'BR':
+		print 'BR'
 		turn(-15)
 		while not foundFirstToken:
 			markers = R.see()
+			print 'looking for token'
 			if len(markers) >= 1:
 				for m in markers:
-					if m.dist >= float(4.50) or m.dist <= float(5.50):
+					if m.dist >= 4.50 or m.dist <= 5.50:
 						dist = m.dist
 						degree = m.centre.polar.rot_x
 						foundFirstToken = True
@@ -293,41 +297,65 @@ def firstToken():
 			else:
 				search(1)
 				return
-	if currfirstToken == 'Mid':
+	if currfirstToken == 'M':
 		print 'M'
-		print ToDo
+		turn(-30)
+		time.sleep(0.5)
+		drive_F_B(2.5)
+		time.sleep(0.5)
+		turn(90)
+		drive_F_B(2.20)
+		while not atMidToken:
+			turn(-20)
+			markers = R.see()
+			print 'looking for token'
+			if len(markers) >= 1:
+				for m in markers:
+					if m.dist >= 1.15 or m.dist <= 1.40:
+						crossStateInfo = m
+						takingMidToken = True
+						print('This is for debugging')
+						gotoToken()
+						atMidToken = True
+						break
+					else:
+						print('This is for debugging too')
+						search(1)
+						return
 	if currfirstToken == None:
-		print 'Nope'
+		print 'No specific token selected'
 		search(1)
 		return
 	if foundFirstToken:
-		print 'blah'
+		print 'found token'
 		turn(-degree)
 		time.sleep(0.5)
-		drive_F_B(dist)
-		state == 'put in needed State'
+		drive_F_B(dist-0.5)
+		gotoToken()
+		gotFirstToken = True
 		return
-
-
-def gotoToken():
-	m = crossStateInfo
-	alpha = m.orientation.rot_y
-	alphaRad = math.radians(alpha)
-	hyp = m.dist
-	ggkath = math.sin(alphaRad) * hyp
-	ankath = math.sin(alphaRad) * hyp
-	turn(-alpha)#might be an issue/+alpha
-	if alpha > 0:
-		drive_L_R(ggkath)
-	else:
-		drive_L_R(-ggkath)
-	drive_F_B(ankath-0.3)#uncut :P
+	if atMidToken == True:
+		gotFirstToken = True
+		state == "pickupToken"
 
 def grabToken():
-	grabSide('front', False)
-	moveArm('middle')
-	time.sleep(1)
-	drive_F_B(0.25)
+	global hasTokenB
+	if hasTokenB == False:
+		drive_F_B(-0.3)
+		turn(180)
+		drive_F_B(-0.3)
+		grabSide('back', False)
+		time.sleep(1)
+		drive_F_B(-0.25)
+		grabSide('back', True)
+		time.sleep(1)
+		drive_F_B(0.25)
+		hasTokenB = True
+	else:
+		grabSide('front', False)
+		moveArm('middle')
+		time.sleep(1)
+		drive_F_B(0.25)
 #Turn Token
 turnDict = {
 	'z0id32':0, 'z0id33':0, 'z0id34':5, 'z0id35':1, 'z0id36':4, 'z0id37':3, 'z0id38':0, 'z0id39':0, 'z0id40':5, 'z0id41':4, 'z0id42':1, 'z0id43':3, 'z0id44':0, 'z0id45':0, 'z0id46':5, 'z0id47':3, 'z0id48':1, 'z0id49':4,
@@ -377,6 +405,90 @@ def turnToken():
     elif case == 4:#E - R2
         turnTokenPart(2)
     #elif case == 5:#F - /
+	
+def gotoTokenStep1():
+    global wayToDriveAtToken
+    m = crossStateInfo
+    dictentry = 'z{0}id{1}'.format(R.zone, m.info.code)
+    orientat = 0
+    baseCase = turnDict[dictentry]
+    case = 0
+    
+    if m.orientation.rot_y < 5 or m.orientation.rot_y > 355:#Orientation F
+        orientat += 0
+    elif m.orientation.rot_y < 265 or m.orientation.rot_y > 275:#Orientation R
+    	orientat += 1
+    elif m.orientation.rot_y < 85 or m.orientation.rot_y > 355:#Orientation L
+    	orientat += 2
+    elif m.orientation.rot_y < 175 or m.orientation.rot_y < 185:#Orientation B
+    	orientat += 3
+    
+    if baseCase == 0 or baseCase == 1 or baseCase == 2 or baseCase == 3:
+    	case = (baseCase + orientat) % 4
+    elif baseCase == 4 or baseCase == 5:
+        case = baseCase
+		
+	if case == 1 or 3:
+		wayToDriveAtToken = 1
+	else:
+		wayToDriveAtToken = 2
+	
+def gotoTokenStep2():
+	global hasTokenB, wayToDriveAtToken
+	m = crossStateInfo
+	alpha = m.orientation.rot_y
+	beta = m.orientation.rot_x
+	alphaRad = math.radians(alpha)
+	betaRad = math.radians(beta)
+	hyp = m.dist
+	ggkathAlpha = math.sin(alphaRad) * hyp
+	ankathAlpha = math.sin(alphaRad) * hyp
+	ggkathBeta = math.sin(betaRad) * hyp
+	ankathBeta = math.sin(betaRad) * hyp
+	if hasTokenB == False:
+		turn(180)
+		if wayToDriveAtToken == 2:
+			turn(-alpha) #might be an issue/+alpha
+			print 'No need to turn U or V'
+			if alpha > 0:
+				drive_L_R(ggkathAlpha)
+			else:
+				drive_L_R(-ggkathAlpha)
+			drive_F_B(-ankathAlpha+0.3)#uncut :P
+		elif wayToDriveAtToken == 1:
+			turn(-beta)
+			print 'Need to drive a different Way'
+			if alpha > 0:
+				drive_L_R(ggkathBeta)
+			else:
+			    drive_L_R(-ggkathBeta)
+			drive_F_B(-ankathBeta+0.3)
+	else:
+		if wayToDriveAtToken == 2:
+			turn(-alpha) #might be an issue/+alpha
+			print 'No need to turn U or V'
+			if alpha > 0:
+				drive_L_R(ggkathAlpha)
+			else:
+				drive_L_R(-ggkathAlpha)
+			drive_F_B(ankathAlpha-0.3)#uncut :P
+		elif wayToDriveAtToken == 1:
+			turn(-beta)
+			print 'Need to drive a different Way'
+			if alpha > 0:
+				drive_L_R(ggkathBeta)
+			else:
+			    drive_L_R(-ggkathBeta)
+			drive_F_B(ankathBeta-0.3)
+			
+def gotoToken():
+	gotoTokenStep1()
+	gotoTokenStep2()
+	if takingMidToken == True:
+		return
+	else:
+		state = "pickupToken"
+		return
 
 def turnTokenUp():#R #we are asuming that the robot is holding the token in question or standing right in front of it
 	grabSide('front', False)
@@ -576,12 +688,15 @@ def main():
         if state == "start":
             state = "searching"
         elif state == "searching":
-            search(1)
+            if not gotFirstToken:
+                firstToken()
+            else:
+				search(1)
         elif state == "gotoToken":
             gotoToken()
         elif state == "pickupToken":
 			grabToken()
-			if hasTokenB or hasTokenF or hasTokenL or hasTokenR:
+			if hasTokenF and (hasTokenB or hasTokenL or hasTokenR):
 				state = "gotoCorner"
 			else:
 				state = "searching"
