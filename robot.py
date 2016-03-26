@@ -1,5 +1,5 @@
 #########################################################################################################################################
-#Disclaimer:                            																								#
+#Disclaimer:                                																							#
 #---------------------------------------------------------------------------------------------------------------------------------------#
 #You can use this code for any and all educational purposes.																			#
 #If you want to use it for the Student Robotics Contest you will have to send us an email and link our GitHub repository in your code.	#
@@ -424,15 +424,26 @@ def takeToken(prefDist = None):#go to and grab Token
     ankath = cos(radians(alpha)) * hyp
     ggkath = sin(radians(alpha)) * hyp
     if case == 1 or case == 3:
-        turn(90-alpha)
-        if alpha > 0:
-            driveLR(-ankath)
-        else:
-            driveLR(-ankath)
-        driveFB(ggkath - 0.20)
+        print 'case == 1 or case == 3'
+        if alpha < 0:
+            print 'alpha < 0'
+            turn(-90 - alpha)
+            driveLR(ankath + 0.06)
+            driveFB(-ggkath - 0.20)
+        elif alpha > 0:
+            print 'alpha > 0'
+            turn(90 - alpha)
+            driveLR(ankath + 0.06)
+            driveFB(ggkath - 0.20)
     else:
+        print '!case == 1 or !case == 3'
         turn(-alpha)
-        driveLR(-ggkath)
+        if alpha < 0:
+            print 'alpha < 0'
+            driveLR(ggkath - 0.06)
+        elif alpha > 0:
+            print 'alpha > 0'
+            driveLR(ggkath + 0.06)
         driveFB(ankath - 0.20)
     if not hasTokenB:
         turn(165)
@@ -443,7 +454,7 @@ def takeToken(prefDist = None):#go to and grab Token
         armState('M')
         grab('F', False)
         time.sleep(0.5)
-        driveFB(1)
+        driveFB(0.5)
         grab('F', True)
         time.sleep(0.5)
         armState('MU')
@@ -461,16 +472,17 @@ def takeToken(prefDist = None):#go to and grab Token
         hasTokenR = True
 
 def scanGrabbedToken():
-	print 'scanGrabbedToken'
-	print 'camState(D)'
-	markers = scan()
-	print 'camState(U)'
-	return sortForDist(markers)[0]
+    print 'scanGrabbedToken'
+    print 'camState(D)'
+    markers = scan()
+    print 'camState(U)'
+    return sortForDist(markers)[0]
 	
 def getOrientation(m):#sunny side up
-    print 'getOrientation ' + str(m)
+    print 'getOrientation ' + str(m.orientation.rot_y)
     try:
         baseCase = turnDict['z{0}id{1}'.format(zone(), m.info.code)]
+        print baseCase
     except KeyError:
             print 'wrong marker!!'
             return 5
@@ -479,18 +491,23 @@ def getOrientation(m):#sunny side up
     
     if m.orientation.rot_y < 5 or m.orientation.rot_y > 355:#Orientation F
     	orientat += 0
+        print'orientation = 0'
     elif m.orientation.rot_y < 265 or m.orientation.rot_y > 275:#Orientation R
     	orientat += 1
+        print'orientation = 1'
     elif m.orientation.rot_y < 85 or m.orientation.rot_y > 355:#Orientation L
     	orientat += 2
+        print'orientation = 2'
     elif m.orientation.rot_y < 175 or m.orientation.rot_y < 185:#Orientation B
     	orientat += 3
+        print'orientation = 3'
     
     if baseCase == 0 or baseCase == 1 or baseCase == 2 or baseCase == 3:
     	case = (baseCase + orientat) % 4
     elif baseCase == 4 or baseCase == 5:
         case = baseCase
-	return case
+    print case
+    return case
 
 def orientate():
     print 'orientate'
@@ -520,6 +537,7 @@ def orientationR():#R #we are asuming that the robot is holding the token in que
     print 'orientationR'
     grab('F', False)
     time.sleep(1)
+    turn(1.5)
     armState('D')
     time.sleep(1)
     grab('F', True)
@@ -657,17 +675,17 @@ def test5():
         print(m.dist)
         print(m.orientation.rot_y)
         print('------------------------------------')
-    driveFB(2)
+    driveFB(1)
     time.sleep(0)
-    driveFB(-2)
+    driveFB(-1)
     time.sleep(0)
     markers = scan()
     for m in markers:
         print(m.dist)
         print('-------------------------------------')
-    driveLR(1)
+    driveLR(0.5)
     time.sleep(0)
-    driveLR(-1)
+    driveLR(-0.5)
     markers = scan()
     for m in markers:
 		print(m.dist)
@@ -714,7 +732,7 @@ def main():
 
 #test()
 #test2()
-#test3()
-test4()
+test3()
+#test4()
 #test5()
 #test6()
