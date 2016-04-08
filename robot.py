@@ -26,8 +26,11 @@ alpha = 0
 hyp = 0
 ankth = 0
 ggkath = 0
+case = 0
 
 tries = 0
+
+hasAnotherToken = False
 
 motorSpeedFBFastFL = -49
 motorSpeedFBFastBL = -49
@@ -71,6 +74,9 @@ backmotorSpeedLRSlowBR = -23
 
 motorSpeedTurnFast = 25
 motorSpeedTurnSlow = 15
+
+lastTime = 0
+
 
 #End Constants
 #Variables
@@ -145,6 +151,7 @@ def llDriveFB(dist):#positive: front
     distTick = (abs(distCorrect)/wheelCircumference)*ticksPerMeter#distance in ticks
     print 'distTick: ' + str(distTick)
     currentDistTick = 0
+    resetTicks()
     if dist > 1:
         setMotor(fl = motorSpeedFBSlowFL, bl = motorSpeedFBSlowBL, fr = motorSpeedFBSlowFR, br = motorSpeedFBSlowBR)
         time.sleep(0.5)
@@ -173,6 +180,7 @@ def llDriveLR(dist):#positive: left
     distTick = (abs(distCorrect)/wheelCircumference)*ticksPerMeter#distance in ticks
     print 'distTick: ' + str(distTick)
     currentDistTick = 0
+    resetTicks()
     if dist > 1:
         setMotor(fl = motorSpeedLRSlowFL, bl = motorSpeedLRSlowBL, fr = motorSpeedLRSlowFR, br = motorSpeedLRSlowBR)
         time.sleep(0.5)
@@ -198,6 +206,7 @@ def llDriveLR(dist):#positive: left
 #End Drive
 #Turn
 def llTurn(degree):#positive: counter clockwise
+    global lastTime
     while degree > 180:
         degree -= 360
     while degree < -180:
@@ -205,6 +214,8 @@ def llTurn(degree):#positive: counter clockwise
     currentDegreeTick = 0.0
     degreeTick = 0.0
     degreeTick = float(((abs(degree/360.0)*robotCircumference)/wheelCircumference)*ticksPerMeter)
+    lastTicks = 0
+    lastTime = 0
     resetTicks()
     if degree > 0:
         setMotor(fl = motorSpeedTurnFast, bl = motorSpeedTurnFast, fr = motorSpeedTurnFast, br = motorSpeedTurnFast)
@@ -212,32 +223,63 @@ def llTurn(degree):#positive: counter clockwise
         setMotor(fl = -motorSpeedTurnFast, bl = -motorSpeedTurnFast, fr = -motorSpeedTurnFast, br = -motorSpeedTurnFast)
     while currentDegreeTick < degreeTick-500:
         currentDegreeTick += (getTicks('FR')+getTicks('BL'))/2.0
-    if degree > 0:
-        setMotor(fl = motorSpeedTurnSlow, bl = motorSpeedTurnSlow, fr = motorSpeedTurnSlow, br = motorSpeedTurnSlow)
-    else:
-        setMotor(fl = -motorSpeedTurnSlow, bl = -motorSpeedTurnSlow, fr = -motorSpeedTurnSlow, br = -motorSpeedTurnSlow)
-    while currentDegreeTick < degreeTick:
+    while currentDegreeTick < degreeTick:#if under 500 to go
         currentDegreeTick += (getTicks('FR')+getTicks('BL'))/2.0
+        if onceASec():#once a sec and the first time around
+            if lastTicks == 0:#if the first time go slow
+                if degree > 0:
+                    setMotor(fl = motorSpeedTurnSlow, bl = motorSpeedTurnSlow, fr = motorSpeedTurnSlow, br = motorSpeedTurnSlow)
+                else:
+                    setMotor(fl = -motorSpeedTurnSlow, bl = -motorSpeedTurnSlow, fr = -motorSpeedTurnSlow, br = -motorSpeedTurnSlow)
+                lastTicks = currentDegreeTick
+                continue
+            if lastTicks+250 > currentDegreeTick:#if we havent driven at least 250
+                if degree > 0:
+                    setMotor(fl = motorSpeedTurnFast, bl = motorSpeedTurnFast, fr = motorSpeedTurnFast, br = motorSpeedTurnFast)
+                else:
+                    setMotor(fl = -motorSpeedTurnFast, bl = -motorSpeedTurnFast, fr = -motorSpeedTurnFast, br = -motorSpeedTurnFast)
+                lastTicks = currentDegreeTick
+            else:#if we have driven at least 250 since 1 sec ago go slow
+                if degree > 0:
+                    setMotor(fl = motorSpeedTurnSlow, bl = motorSpeedTurnSlow, fr = motorSpeedTurnSlow, br = motorSpeedTurnSlow)
+                else:
+                    setMotor(fl = -motorSpeedTurnSlow, bl = -motorSpeedTurnSlow, fr = -motorSpeedTurnSlow, br = -motorSpeedTurnSlow)
+                lastTicks = currentDegreeTick
     setMotor(fl = 0, bl = 0, fr = 0, br = 0)
+
+def onceASec():#if you use this make sure to always put lastTime = 0 into your methode befor using this in order to make sure that this also triggers the first time its called
+    global lastTime
+    if lastTime == 0:
+        lastTime = getRemainingTime()
+        return True
+    if lastTime-1 >= getRemainingTime():
+        lastTime = getRemainingTime()
+        return True
+    else:
+        return False
+
 #End Turn
 #End Motors
 
 def llGrab(arm, state):#'F'/'R'/'L'/'B' #True: closed
    if arm == 'F':
         if state == True:
-            R.servos[0][7] = -40
+            R.servos[0][7] = -100
+            R.servos[0][5] = 100
         elif state == False:
-            R.servos[0][7] = 80
+            R.servos[0][7] = 100
+            R.servos[0][5] = -100
    if arm == 'L':
-        print 'this arm was take off the robot due to resons... please rewrite your code to stop using this arm alltogether'
+        print 'this arm was taken off the robot due to resons... please rewrite your code to stop using this arm alltogether'
    if arm == 'B':
         if state == True:
             R.servos[0][0] = -10
         elif state == False:
             R.servos[0][0] = 70
    if arm == 'R':
-        print 'this arm was take off the robot due to resons... please rewrite your code to stop using this arm alltogether'
+        print 'this arm was taken off the robot due to resons... please rewrite your code to stop using this arm alltogether'
 def llArmState(state):#'U'/'M'/'D'
+    print state
     if state == 'U':
         R.servos[0][4] = -15
     elif state == 'M':
@@ -248,6 +290,7 @@ def llArmState(state):#'U'/'M'/'D'
         R.servos[0][4] = -45
     else:
         raise ValueError()
+
 
 def llCamState(state):#'U'/'D'
 	if state == 'U':
@@ -341,9 +384,7 @@ abortTime = 90
 #End Constants
 #Variables
 hasTokenF = False#0/False = keiner, 1/True = einer da, 2/True = einer richtig gedreht da
-hasTokenL = False#0/False = keiner, 1/True = einer da, 2/True = einer richtig gedreht da
-hasTokenB = False#0/False = keiner, 1/True = einer da, 2/True = einer richtig gedreht da
-hasTokenR = False#0/False = keiner, 1/True = einer da, 2/True = einer richtig gedreht da
+hasTokenB = True#0/False = keiner, 1/True = einer da, 2/True = einer richtig gedreht da
 
 tokenNumber = 2#Number of Token to collect
 #End Variables
@@ -392,13 +433,24 @@ def rps(m):#@Parameter ArenaMarker @return (x,y,rot)
             return (distToWall, distToLeftWall, 180 + relrot)
 
 def returnToZone():
-	print 'returnToZone'
-	m = lookToMarker(0, None)
-	rpsInfo = rps(m)
-	print '    ' + str(rpsInfo)
-	fromZeroDegToCorner = (90+(180/pi)*atan(rpsInfo[0]/rpsInfo[1]))#(90 + arctan(x/y))
-	turn(-(rpsInfo[2]+fromZeroDegToCorner))
-	driveFB(sqrt(rpsInfo[0]**2 + rpsInfo[1]**2) - 1)
+    print 'returnToZone'
+    m = lookToMarker(0, None, 1)
+    rpsInfo = rps(m)
+    hyp = sqrt(rpsInfo[0]**2 + rpsInfo[1]**2)
+    print '    ' + str(rpsInfo)
+    fromZeroDegToCorner = (90+(180/pi)*atan(rpsInfo[0]/rpsInfo[1]))#(90 + arctan(x/y))
+    turn(-(rpsInfo[2]+fromZeroDegToCorner))
+    if hyp >= 3:
+        driveFB(hyp - hyp/2)
+        m = lookToMarker(0, None, 1)
+        rpsInfo = rps(m)
+        hyp = sqrt(rpsInfo[0]**2 + rpsInfo[1]**2)
+        print '    ' + str(rpsInfo)
+        fromZeroDegToCorner = (90+(180/pi)*atan(rpsInfo[0]/rpsInfo[1]))#(90 + arctan(x/y))
+        turn(-(rpsInfo[2]+fromZeroDegToCorner))
+        driveFB(hyp - 1)
+    else:
+        driveFB(hyp - 1)
 
 def sortForDist(markerArr):
     print 'sortForDist'
@@ -408,32 +460,27 @@ def sortForDist(markerArr):
         for m in markerArr:
             if m.dist < lowest.dist:
                 lowest = m
-        markerArr.remove(lowest)
         newArr.append(lowest)
+        markerArr.remove(lowest)
     return newArr
 	
 def lookToMarker(type = 1, prefDist = None, direction = 1):#0: Arena, 1: Token(U+B+S) #preferred distance to Marker +-0.3m #direction = turndirection; pls only use 1 or -1
-	print 'lookToMarker ' + str(type) + '@' + str(prefDist) + 'm'
-	counter = 0
-	while counter < 24 and not getRemainingTime < abortTime:
-		markers = scan()
+    print 'lookToMarker ' + str(type) + '@' + str(prefDist) + 'm'
+    counter = 0
+    while counter < 24 and not getRemainingTime < abortTime:
+        counter += 1
+        markers = scan()
         if len(markers) == 0:
-            if direction == 1:
-                turn(15)
-            elif direction == -1:
-                turn(-15)
+            turn(direction * 15)
         else:
             markers = sortForDist(markers)
             for m in markers:
-                if (type == 0 and m.info.marker_type == MARKER_ARENA) or (type == 1 and m.info.marker_type == MARKER_TOKEN_TOP or m.info.marker_type == MARKER_TOKEN_SIDE or m.info.marker_type == MARKER_TOKEN_BOTTOM):
+                if (type == 0 and m.info.marker_type == MARKER_ARENA) or (type == 1 and (m.info.marker_type == MARKER_TOKEN_TOP or m.info.marker_type == MARKER_TOKEN_SIDE or m.info.marker_type == MARKER_TOKEN_BOTTOM)):
                     return m
                 else:
-                    if direction == 1:
-                        turn(15)
-                    elif direction == -1:
-                        turn(-15)
+                    turn(direction * 15)
                     
-def resetConstants():
+def resetConstants(): #just for safety
     global hyp, alpha, ankth, ggkath
     hyp = 0
     alpha = 0
@@ -441,47 +488,68 @@ def resetConstants():
     ggkath = 0
 					
 def takeToken(prefDist = None):
-    global hasTokenF, hasTokenL, hasTokenB, hasTokenR, hyp, alpha, ankth, ggkath, tries
-    m = lookToMarker(1, prefDist, 1)
+    global hasTokenF, hasTokenB, hyp, alpha, ankth, ggkath, tries, hasAnotherToken, case
+    m = lookToMarker(1, prefDist, 1) #search for a token
     case = getOrientation(m)
     hyp = m.dist
     alpha = m.orientation.rot_y
     ankath = cos(radians(alpha)) * hyp
     ggkath = sin(radians(alpha)) * hyp
-    if case == 1 or case == 3:
-        if alpha < 0:
+    if correctDriveB():
+        m = lookToMarker(1, prefDist, 1) #search for a token
+        case = getOrientation(m)
+        hyp = m.dist
+        alpha = m.orientation.rot_y
+        ankath = cos(radians(alpha)) * hyp
+        ggkath = sin(radians(alpha)) * hyp
+    if case == 1 or case == 3: #right side is on non rotable side
+        if alpha < 0: #position is on the left side of the marker
             turn(-90 - alpha)
-            driveLR(ankath + 0.06)
-        else:
+            driveLR(ankath)
+        else: #position is on the right side of the marker
             turn(90 - alpha)
-            driveLR(-ankath - 0.06)
-    else:
+            driveLR(-ankath)
+    else: #right side is on rotable side
         turn(-alpha)
         if alpha < 0:
-			driveLR(ggkath - 0.06)
+			driveLR(ggkath)
         else:
-            driveLR(ggkath + 0.06)
-    tmp = correctPosition(prefDist)
+            driveLR(ggkath)
+    print 'finished takeTokenStep1()'
+    tmp = correctPosition(prefDist) #save the varibles of the position right in front of the marker in tmp
+    if hasAnotherToken == True:
+        hasAnotherToken = False
+        return
+    print 'finished takeTokenStep2()'
     if not case == 1 or not case == 3:
         if alpha < 0:
             print 'alpha < 0'    
         elif alpha > 0:
             print 'alpha > 0'
-        if tmp[1] >= 3:
+        if tmp[1] >= 3: #drive only half of the way in order to correct the position again
             driveFB(tmp[1]/2)
             tmp = correctPosition()
+            if hasAnotherToken == True:
+                hasAnotherToken = False
+                return
         driveFB(tmp[1] - 0.20)
     if alpha < 0:
         print 'alpha < 0'
-        if -tmp[2] >= 3:
-            driveFB(-tmp[2] + tmp[2]/2)
+        if -tmp[2] >= 3: #drive only half of the way in order to correct the position again
+            driveFB(-tmp[2] - tmp[2]/2)
             tmp = correctPosition()
+            if hasAnotherToken == True:
+                hasAnotherToken = False
+                return
         driveFB(-tmp[2] - 0.20)
     elif alpha > 0:
         print 'alpha > 0'
-        if tmp[2] >= 3:
+        if tmp[2] >= 3: #drive only half of the way in order to correct the position again
             driveFB(tmp[2] - tmp[2]/2)
             tmp = correctPosition()
+            if hasAnotherToken == True:
+                hasAnotherToken = False
+                return
         driveFB(tmp[2] - 0.20)
     if not hasTokenB:
         turn(180)
@@ -502,7 +570,6 @@ def takeToken(prefDist = None):
 def correctPosition(prefDist = None):
     global hyp, alpha, ankath, ggkath, tries
     m = lookToMarker(1, prefDist, 1)
-    resetConstants()
     hyp = m.dist
     alpha = m.orientation.rot_y
     ankath = cos(radians(alpha)) * hyp
@@ -510,7 +577,10 @@ def correctPosition(prefDist = None):
     while m.orientation.rot_y < -1 or m.orientation.rot_y > 1:
         print 'need to correct the position'
         turn(-alpha)
-        driveLR(ggkath)
+        if alpha < 0:
+            driveLR(ggkath)
+        else:
+            driveLR(-ggkath)
         tries += 1
         print str(tries) + ' try bzw. tries'
         m = lookToMarker(1, prefDist, 1)
@@ -524,15 +594,38 @@ def correctPosition(prefDist = None):
             print ankath
             print ggkath
             return alpha, ankath, ggkath
-        if tries >= 3:
+        if tries >= 2:
             print 'take different Token'
             getOtherToken()
+            return
     if m.orientation.rot_y > -1 or m.orientation.rot_y < 1:
         print 'standing right'
         return alpha, ankath, ggkath 
         
+def correctDriveB():
+    global alpha, ankth, ggkath, case
+    if case == 1 or case == 3:
+        if alpha > 0:
+            if ankath <= 0.50:
+                turn(-alpha)
+                driveFB(-0.50 + ankath)
+                return True
+            return False
+        else:
+            if ggkath <= 0.50:
+                turn(-alpha)
+                driveFB(-0.50 + ggkath)
+                return True
+            return False
+    else:
+        if ggkath <= 0.50:
+            turn(-alpha)
+            driveFB(-0.50 + ggkath)
+            return True
+        return False
+        
 def getOtherToken(prefDist = None):
-    global tries
+    global tries, hasAnotherToken
     tries = 0
     if alpha > 0:
         turn(-90)
@@ -541,13 +634,15 @@ def getOtherToken(prefDist = None):
         turn(90)
         m = lookToMarker(1, prefDist, 1)
     takeToken()
-    return
+    hasAnotherToken = True
 
 def scanGrabbedToken():
     print 'scanGrabbedToken'
-    print 'camState(D)'
+    camState('D')
+    time.sleep(0.5)
     markers = scan()
-    print 'camState(U)'
+    time.sleep(0.5)
+    camState('U')
     return sortForDist(markers)[0]
 	
 def getOrientation(m):#sunny side up
@@ -609,7 +704,6 @@ def orientationR():#R #we are asuming that the robot is holding the token in que
     print 'orientationR'
     grab('F', False)
     time.sleep(1)
-    turn(1.5)
     armState('D')
     time.sleep(1)
     grab('F', True)
@@ -618,7 +712,6 @@ def orientationR():#R #we are asuming that the robot is holding the token in que
     time.sleep(2)
     grab('F', False)
     time.sleep(0.5)
-    turn(1.5)
     time.sleep(0.2)
     armState('M')
     time.sleep(1)
@@ -630,47 +723,7 @@ def swapToken():
     global hasTokenF, hasTokenL, hasTokenB, hasTokenR
     armState('M')
     time.sleep(1)
-    if hasTokenL == 1:
-		grab('F', False)
-		time.sleep(0.5)
-		driveFB(-0.3)
-		turn(-90)
-		grab('L', False)
-		time.sleep(0.2)
-		driveLR(-0.3)
-		turn(90)
-		driveFB(0.3)
-		grab('F', True)
-		time.sleep(0.5)
-		turn(-90)
-		driveLR(0.3)
-		grab('L', True)
-		time.sleep(0.3)
-		turn(90)
-		hasTokenL = hasTokenF
-		hasTokenF = 1
-		return True
-    elif hasTokenR == 1:
-		grab('F', False)
-		time.sleep(0.5)
-		driveFB(-0.3)
-		turn(90)
-		grab('R', False)
-		time.sleep(0.2)
-		driveLR(0.3)
-		turn(-90)
-		driveFB(0.3)
-		grab('F', True)
-		time.sleep(0.5)
-		turn(90)
-		driveLR(-0.3)
-		grab('R', True)
-		time.sleep(0.3)
-		turn(90)
-		hasTokenR = hasTokenF
-		hasTokenF = 1
-		return True
-    elif hasTokenB == 1:
+    if hasTokenB == 1:
 		grab('F', False)
 		time.sleep(0.5)
 		driveFB(-0.3)
@@ -695,10 +748,8 @@ def swapToken():
 def firstToken(choice = 'None'):#'MM'/'FM'/'RM'
 	print 'firstToken'
 	if choice == 'MM':
-		turn(-45)
-		driveFB(2.25)
-		turn(90)
-		driveFB(2.5)
+		driveLR(-2.5)
+		driveFB(2.75)
 		turn(-40)
 	if choice == 'FM':
 		turn(-45)
@@ -718,13 +769,11 @@ def test2():
 	while markers == 0:
 		markers = scan()
 	for m in markers:
-		print(m.orientation.rot_y)
+		print m.orientation.rot_y
 		
 def test3():
     global hasTokenB
     hasTokenB = True
-    hasTokenR = True
-    hasTokenL = True
     takeToken()
     print 'sucessfully tested takeToken()'
 	
@@ -787,7 +836,7 @@ def test7():
         else:
             print ':('
             
-def turntest():
+def test8():
     while True:
         turn(-180)
         time.sleep(2)
@@ -797,24 +846,37 @@ def turntest():
         time.sleep(2)
         turn(-180)
         time.sleep(2)
+        
+def test9():
+    print 'test new arm'
+    armState('M')
+    time.sleep(3)
+    grab('F', True)
+    time.sleep(2)
+    grab('F', False)
 #/for debugging and testing
 	
 
 def initialize():
-	grab('B', False)
-	print 'Hello, World!'
+    grab('B', False)
+    armState('MU')
+    time.sleep(0.25)
+    grab('F', False)
+    print 'Hello, World!'
 	
 #main tactic
 def main():
-	firstToken('MM')
-	takeToken()
-	takeToken()
-	returnToZone()
-	while swapToken():
-		orientate()
-	grab('F', False)
-	grab('B', False)
-	print('Done')
+    firstToken('MM')
+    camState('D')
+    takeToken()
+    #takeToken()
+    camState('U')
+    returnToZone()
+    #while swapToken(): #this used to include orientate and is used to wohn better 
+    orientate()
+    grab('F', False)
+    grab('B', False)
+    print('Done')
 #/main tactic
 initialize()
 main()
@@ -826,4 +888,7 @@ main()
 #test5()
 #test6()
 #test7()
-#turntest()
+#test8()
+#test9()
+
+
